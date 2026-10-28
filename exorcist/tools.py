@@ -75,6 +75,7 @@ class IssueInput(BaseModel):
 
 
 class OneSlackTool(BaseTool):
+    result: dict | None = None  # idempotent: a retry within one run returns the first real result instead of posting again
     name: str = "post_slack_alert"
     description: str = "Post an alert message to the team's incident Slack channel through One. Returns JSON {ok, url, note}."
     args_schema: type[BaseModel] = SlackInput
@@ -83,6 +84,8 @@ class OneSlackTool(BaseTool):
     def _run(self, text: str) -> str:
         from . import one_exec
 
+        if self.result is not None:
+            return json.dumps({**self.result, "note": "already posted in this run; not posting again"})
         try:
             r = one_exec.run(one_exec.execute("slack_alert", "alert", text))
         except Exception as e:
@@ -90,12 +93,15 @@ class OneSlackTool(BaseTool):
         out = {"ok": bool(r.get("ok")), "url": r.get("url"), "note": r.get("note") or ""}
         if not out["ok"] and r.get("raw") is not None:
             out["note"] = (out["note"] + " " + json.dumps(r["raw"])[:400]).strip()
+        if out["ok"]:
+            self.result = out
         if self.observer:
             self.observer("action_result", {"kind": "slack_alert", **out, "text": text})
         return json.dumps(out)
 
 
 class OneGitHubTool(BaseTool):
+    result: dict | None = None  # idempotent: a retry within one run returns the first real result instead of posting again
     name: str = "open_github_issue"
     description: str = "Open a GitHub issue in the team's robot repository through One. Returns JSON {ok, url, note}."
     args_schema: type[BaseModel] = IssueInput
@@ -104,6 +110,8 @@ class OneGitHubTool(BaseTool):
     def _run(self, title: str, body: str) -> str:
         from . import one_exec
 
+        if self.result is not None:
+            return json.dumps({**self.result, "note": "already opened in this run; not opening again"})
         try:
             r = one_exec.run(one_exec.execute("github_issue", title, body))
         except Exception as e:
@@ -111,6 +119,8 @@ class OneGitHubTool(BaseTool):
         out = {"ok": bool(r.get("ok")), "url": r.get("url"), "note": r.get("note") or ""}
         if not out["ok"] and r.get("raw") is not None:
             out["note"] = (out["note"] + " " + json.dumps(r["raw"])[:400]).strip()
+        if out["ok"]:
+            self.result = out
         if self.observer:
             self.observer("action_result", {"kind": "github_issue", **out, "title": title, "body": body})
         return json.dumps(out)

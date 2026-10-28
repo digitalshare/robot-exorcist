@@ -4,6 +4,10 @@
 
 Built at **Hack with YOU: Halloween Edition** (Track 3, The Open Haunt) with CrewAI, You.com, Parasail and One.
 
+![Robot Exorcist console: log feed, incidents, investigation with citations, verdict and executed actions](docs/console.jpg)
+
+*A real run on `samples/haunted_cell`: three incidents investigated with cited sources, one shared root cause (PSU brownout, 95% confidence), the Slack alert posted and [the GitHub issue opened](https://github.com/digitalshare/robot-exorcist/issues/5) through One.*
+
 ## The problem
 
 A lab robot cell starts misbehaving overnight: the UR5e arm protective-stops mid-path, the Dynamixel gripper throws overload errors, the AMR's lidar keeps timing out. Three subsystems, three vendors, three log formats, one tired on-call engineer. Each symptom has a plausible local explanation (bad trajectory, worn gear, dying lidar). The real cause is often shared and invisible from any single log.
