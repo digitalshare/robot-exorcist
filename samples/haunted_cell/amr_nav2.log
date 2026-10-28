@@ -1,0 +1,33 @@
+[2026-10-28 01:58:50.300] [INFO] [lifecycle_manager_navigation]: Managed nodes are active
+[2026-10-28 01:58:50.420] [INFO] [rplidar_node]: RPLIDAR S/N: 9A7C... Firmware Ver: 1.29, Hardware Rev: 7. Health status: OK
+[2026-10-28 01:58:50.980] [INFO] [bt_navigator]: Begin navigating from (1.20, 0.40) to (6.80, -2.10)
+[2026-10-28 02:00:03.110] [INFO] [bt_navigator]: Goal succeeded
+[2026-10-28 02:01:14.600] [WARN] [mobility_monitor]: Battery pack voltage dropped to 13.9 V while on dock (charger input 18.2 V, expected 19.0 V)
+[2026-10-28 02:01:15.100] [ERROR] [rplidar_node]: Timeout waiting for scan data (op code: 0x81). Lidar will be restarted
+[2026-10-28 02:01:15.120] [WARN] [controller_server]: Control loop missed its desired rate of 20.0000Hz. Current loop rate is 4.1234Hz
+[2026-10-28 02:01:16.500] [ERROR] [controller_server]: Failed to make progress: no valid control, robot is stuck
+[2026-10-28 02:01:16.510] [ERROR] [bt_navigator]: Navigation failed
+[2026-10-28 02:01:19.004] [INFO] [rplidar_node]: RPLIDAR health status: OK, scan resumed
+[2026-10-28 02:02:30.000] [INFO] [bt_navigator]: Begin navigating from (6.80, -2.10) to (1.20, 0.40)
+[2026-10-28 02:03:44.000] [WARN] [mobility_monitor]: Battery pack voltage dropped to 13.6 V while on dock (charger input 17.9 V, expected 19.0 V)
+[2026-10-28 02:03:44.300] [ERROR] [rplidar_node]: Timeout waiting for scan data (op code: 0x81). Lidar will be restarted
+[2026-10-28 02:03:44.330] [WARN] [controller_server]: Control loop missed its desired rate of 20.0000Hz. Current loop rate is 3.8871Hz
+[2026-10-28 02:03:45.700] [ERROR] [controller_server]: Failed to make progress: no valid control, robot is stuck
+[2026-10-28 02:03:45.710] [ERROR] [bt_navigator]: Navigation failed
+[2026-10-28 02:03:48.200] [INFO] [rplidar_node]: RPLIDAR health status: OK, scan resumed
+[2026-10-28 02:07:13.100] [WARN] [mobility_monitor]: Battery pack voltage dropped to 13.4 V while on dock (charger input 17.6 V, expected 19.0 V)
+[2026-10-28 02:07:13.500] [ERROR] [rplidar_node]: Timeout waiting for scan data (op code: 0x81). Lidar will be restarted
+[2026-10-28 02:07:14.900] [ERROR] [controller_server]: Failed to make progress: no valid control, robot is stuck
+[2026-10-28 02:07:14.910] [ERROR] [bt_navigator]: Navigation failed
+[2026-10-28 02:07:17.300] [INFO] [rplidar_node]: RPLIDAR health status: OK, scan resumed
+[2026-10-28 02:09:10.000] [INFO] [bt_navigator]: Goal succeeded
+[2026-10-28 02:10:31.300] [WARN] [mobility_monitor]: Battery pack voltage dropped to 13.5 V while on dock (charger input 17.7 V, expected 19.0 V)
+[2026-10-28 02:10:31.600] [ERROR] [rplidar_node]: Timeout waiting for scan data (op code: 0x81). Lidar will be restarted
+[2026-10-28 02:10:33.000] [ERROR] [controller_server]: Failed to make progress: no valid control, robot is stuck
+[2026-10-28 02:10:33.010] [ERROR] [bt_navigator]: Navigation failed
+[2026-10-28 02:10:35.400] [INFO] [rplidar_node]: RPLIDAR health status: OK, scan resumed
+[2026-10-28 02:16:58.300] [WARN] [mobility_monitor]: Battery pack voltage dropped to 13.2 V while on dock (charger input 17.3 V, expected 19.0 V)
+[2026-10-28 02:16:58.700] [ERROR] [rplidar_node]: Timeout waiting for scan data (op code: 0x81). Lidar will be restarted
+[2026-10-28 02:17:00.100] [ERROR] [controller_server]: Failed to make progress: no valid control, robot is stuck
+[2026-10-28 02:17:00.110] [ERROR] [bt_navigator]: Navigation failed
+[2026-10-28 02:17:02.500] [INFO] [rplidar_node]: RPLIDAR health status: OK, scan resumed

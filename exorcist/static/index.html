@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Robot Exorcist</title>
+<link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+<header>
+  <div class="brand"><span class="sigil">⛧</span> Robot Exorcist <span class="sub">a CrewAI swarm for possessed robots</span></div>
+  <div class="controls">
+    <select id="scenario"></select>
+    <label class="chk"><input type="checkbox" id="auto"> auto-approve</label>
+    <button id="start">Begin the séance</button>
+    <span id="status" class="status idle">idle</span>
+  </div>
+</header>
+
+<main>
+  <section class="panel" id="p-logs">
+    <h2>Log feed <span class="count" id="log-count"></span></h2>
+    <div class="robot" id="robot"></div>
+    <div class="logs" id="logs"></div>
+  </section>
+
+  <section class="panel" id="p-incidents">
+    <h2>Incidents <span class="hint" id="inc-hint"></span></h2>
+    <div id="incidents"></div>
+  </section>
+
+  <section class="panel" id="p-investigation">
+    <h2>Investigation <span class="hint" id="inv-hint"></span></h2>
+    <div id="investigation"><p class="muted">Select an incident to see what the swarm searched, read and concluded.</p></div>
+  </section>
+
+  <section class="panel" id="p-verdict">
+    <h2>Verdict</h2>
+    <div id="verdict"><p class="muted">The incident commander speaks after every investigation returns.</p></div>
+    <h2>Actions <span class="hint" id="act-hint"></span></h2>
+    <div id="actions"></div>
+  </section>
+</main>
+
+<footer>
+  <span>Grounding: <b>You.com</b> Search + Contents</span>
+  <span>Reasoning + embeddings: <b>Parasail</b> <code id="cfg-model"></code></span>
+  <span>Actions: <b>One</b> → <code id="cfg-targets"></code></span>
+  <span>Swarm: <b>CrewAI</b> Flow + crews</span>
+</footer>
+<script src="/static/app.js"></script>
+</body>
+</html>

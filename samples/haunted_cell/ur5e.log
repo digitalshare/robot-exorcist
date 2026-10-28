@@ -1,0 +1,39 @@
+[2026-10-28 01:58:12.004] [INFO] [ur_robot_driver]: Robot connected to reverse interface. Ready to receive control commands.
+[2026-10-28 01:58:12.207] [INFO] [ur_robot_driver]: Robot mode is now RUNNING
+[2026-10-28 01:58:40.110] [INFO] [scaled_joint_trajectory_controller]: Received new action goal
+[2026-10-28 01:59:02.551] [INFO] [scaled_joint_trajectory_controller]: Goal reached, success!
+[2026-10-28 02:01:14.330] [WARN] [ur_robot_driver]: Safety status: NORMAL -> REDUCED
+[2026-10-28 02:01:15.002] [ERROR] [ur_robot_driver]: C204A0: Protective Stop: Position deviates from path. Joint 3 position deviation 0.052 rad exceeds 0.040 rad limit
+[2026-10-28 02:01:15.004] [ERROR] [ur_robot_driver]: Robot mode is now PROTECTIVE_STOP (safety_mode=PROTECTIVE_STOP)
+[2026-10-28 02:01:15.010] [WARN] [scaled_joint_trajectory_controller]: Trajectory aborted by robot, action goal canceled
+[2026-10-28 02:01:15.300] [ERROR] [ur_robot_driver]: Reverse interface: connection to robot lost (timeout). Program execution interrupted.
+[2026-10-28 02:01:21.040] [INFO] [ur_dashboard_client]: unlockProtectiveStop: Protective stop releasing
+[2026-10-28 02:01:28.512] [INFO] [ur_robot_driver]: Robot mode is now RUNNING
+[2026-10-28 02:02:03.118] [WARN] [tf2_buffer]: Warning: TF_REPEATED_DATA ignoring data with redundant timestamp for frame tool0 at time 1793530923.118 according to authority /robot_state_publisher
+[2026-10-28 02:03:44.221] [ERROR] [ur_robot_driver]: C204A0: Protective Stop: Position deviates from path. Joint 3 position deviation 0.061 rad exceeds 0.040 rad limit
+[2026-10-28 02:03:44.223] [ERROR] [ur_robot_driver]: Robot mode is now PROTECTIVE_STOP (safety_mode=PROTECTIVE_STOP)
+[2026-10-28 02:03:44.230] [WARN] [scaled_joint_trajectory_controller]: Trajectory aborted by robot, action goal canceled
+[2026-10-28 02:03:44.901] [ERROR] [ur_robot_driver]: Reverse interface: connection to robot lost (timeout). Program execution interrupted.
+[2026-10-28 02:03:50.104] [INFO] [ur_dashboard_client]: unlockProtectiveStop: Protective stop releasing
+[2026-10-28 02:03:57.330] [INFO] [ur_robot_driver]: Robot mode is now RUNNING
+[2026-10-28 02:05:01.009] [WARN] [tf2_buffer]: Warning: TF_REPEATED_DATA ignoring data with redundant timestamp for frame tool0 at time 1793531101.009 according to authority /robot_state_publisher
+[2026-10-28 02:07:12.874] [WARN] [ur_robot_driver]: Robot reports: C153A1: Joint 3 current deviation too large. Current 2.9 A, expected 1.6 A
+[2026-10-28 02:07:13.442] [ERROR] [ur_robot_driver]: C204A0: Protective Stop: Position deviates from path. Joint 3 position deviation 0.058 rad exceeds 0.040 rad limit
+[2026-10-28 02:07:13.444] [ERROR] [ur_robot_driver]: Robot mode is now PROTECTIVE_STOP (safety_mode=PROTECTIVE_STOP)
+[2026-10-28 02:07:14.102] [ERROR] [ur_robot_driver]: Reverse interface: connection to robot lost (timeout). Program execution interrupted.
+[2026-10-28 02:07:20.008] [INFO] [ur_dashboard_client]: unlockProtectiveStop: Protective stop releasing
+[2026-10-28 02:07:26.771] [INFO] [ur_robot_driver]: Robot mode is now RUNNING
+[2026-10-28 02:08:00.040] [WARN] [tf2_buffer]: Warning: TF_REPEATED_DATA ignoring data with redundant timestamp for frame tool0 at time 1793531280.040 according to authority /robot_state_publisher
+[2026-10-28 02:10:31.552] [ERROR] [ur_robot_driver]: C204A0: Protective Stop: Position deviates from path. Joint 3 position deviation 0.066 rad exceeds 0.040 rad limit
+[2026-10-28 02:10:31.554] [ERROR] [ur_robot_driver]: Robot mode is now PROTECTIVE_STOP (safety_mode=PROTECTIVE_STOP)
+[2026-10-28 02:10:32.118] [ERROR] [ur_robot_driver]: Reverse interface: connection to robot lost (timeout). Program execution interrupted.
+[2026-10-28 02:10:38.200] [INFO] [ur_dashboard_client]: unlockProtectiveStop: Protective stop releasing
+[2026-10-28 02:10:45.011] [INFO] [ur_robot_driver]: Robot mode is now RUNNING
+[2026-10-28 02:11:02.300] [WARN] [tf2_buffer]: Warning: TF_REPEATED_DATA ignoring data with redundant timestamp for frame tool0 at time 1793531462.300 according to authority /robot_state_publisher
+[2026-10-28 02:14:09.771] [INFO] [scaled_joint_trajectory_controller]: Goal reached, success!
+[2026-10-28 02:16:58.004] [WARN] [ur_robot_driver]: Robot reports: C153A1: Joint 3 current deviation too large. Current 3.1 A, expected 1.6 A
+[2026-10-28 02:16:58.631] [ERROR] [ur_robot_driver]: C204A0: Protective Stop: Position deviates from path. Joint 3 position deviation 0.071 rad exceeds 0.040 rad limit
+[2026-10-28 02:16:58.633] [ERROR] [ur_robot_driver]: Robot mode is now PROTECTIVE_STOP (safety_mode=PROTECTIVE_STOP)
+[2026-10-28 02:16:59.207] [ERROR] [ur_robot_driver]: Reverse interface: connection to robot lost (timeout). Program execution interrupted.
+[2026-10-28 02:17:05.100] [INFO] [ur_dashboard_client]: unlockProtectiveStop: Protective stop releasing
+[2026-10-28 02:17:12.440] [INFO] [ur_robot_driver]: Robot mode is now RUNNING

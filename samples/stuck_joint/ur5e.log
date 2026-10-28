@@ -1,0 +1,17 @@
+[2026-10-28 14:02:10.004] [INFO] [ur_robot_driver]: Robot connected to reverse interface. Ready to receive control commands.
+[2026-10-28 14:02:10.207] [INFO] [ur_robot_driver]: Robot mode is now RUNNING
+[2026-10-28 14:02:40.110] [INFO] [move_group]: Planning request received for MoveGroup action. Forwarding to planning pipeline.
+[2026-10-28 14:02:40.390] [INFO] [move_group]: Planner configured for solving planning problems, using OMPL RRTConnect
+[2026-10-28 14:02:41.002] [ERROR] [move_group]: Found a contact between 'wrist_3_link' (type 'Robot link') and 'camera_mount' (type 'Robot attached'), which constitutes a collision. Contact information is not stored.
+[2026-10-28 14:02:41.004] [ERROR] [move_group]: Start state appears to be in collision with respect to group manipulator
+[2026-10-28 14:02:41.010] [WARN] [move_group]: Unable to sample any valid states for goal tree
+[2026-10-28 14:02:41.050] [ERROR] [move_group]: RRTConnect: Unable to sample any valid states for goal tree
+[2026-10-28 14:02:41.052] [ERROR] [move_group]: Planning pipeline threw an exception or did not return a valid plan: START_STATE_IN_COLLISION
+[2026-10-28 14:03:05.771] [INFO] [move_group]: Planning request received for MoveGroup action. Forwarding to planning pipeline.
+[2026-10-28 14:03:06.400] [ERROR] [move_group]: Found a contact between 'wrist_3_link' (type 'Robot link') and 'camera_mount' (type 'Robot attached'), which constitutes a collision. Contact information is not stored.
+[2026-10-28 14:03:06.402] [ERROR] [move_group]: Start state appears to be in collision with respect to group manipulator
+[2026-10-28 14:03:06.440] [ERROR] [move_group]: Planning pipeline threw an exception or did not return a valid plan: START_STATE_IN_COLLISION
+[2026-10-28 14:03:30.100] [WARN] [robot_state_publisher]: Joint 'wrist_3_joint' position 6.41 rad exceeds URDF limit 6.28 rad
+[2026-10-28 14:04:12.900] [INFO] [move_group]: Planning request received for MoveGroup action. Forwarding to planning pipeline.
+[2026-10-28 14:04:13.500] [ERROR] [move_group]: Start state appears to be in collision with respect to group manipulator
+[2026-10-28 14:04:13.540] [ERROR] [move_group]: Planning pipeline threw an exception or did not return a valid plan: START_STATE_IN_COLLISION

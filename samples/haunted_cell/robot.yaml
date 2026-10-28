@@ -1,0 +1,16 @@
+cell: "Cell 3 (north bench)"
+site: "AWS Builder Loft robotics corner"
+power: "All three systems share bench PSU B-3 on circuit 14 with the space heater and the 3D printer farm."
+systems:
+  - id: ur5e
+    kind: "Universal Robots UR5e arm"
+    controller: "CB5 / PolyScope 5.15, ur_robot_driver (ROS 2 Jazzy) in external control"
+    log: ur5e.log
+  - id: gripper
+    kind: "Custom 2-finger gripper on Dynamixel XM430-W350 (ID 1, 12V)"
+    controller: "dynamixel_sdk 3.7.x via U2D2, dynamixel_hardware ros2_control"
+    log: gripper.log
+  - id: amr
+    kind: "TurtleBot4 Standard (Create 3 base, RPLIDAR A1) running Nav2"
+    controller: "ROS 2 Jazzy, nav2_bringup, charging on dock 2"
+    log: amr_nav2.log

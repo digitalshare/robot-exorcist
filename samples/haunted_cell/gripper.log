@@ -1,0 +1,31 @@
+[2026-10-28 01:58:30.100] [INFO] [dynamixel_hardware]: Opened port /dev/ttyUSB0 at 1000000 bps. Found Dynamixel ID 1 (XM430-W350, firmware 48)
+[2026-10-28 01:58:30.104] [INFO] [dynamixel_hardware]: Torque enabled on ID 1
+[2026-10-28 02:01:14.980] [WARN] [dynamixel_hardware]: ID 1 present input voltage 10.6 V (min voltage limit 9.5 V, nominal 12.0 V)
+[2026-10-28 02:01:15.021] [ERROR] [dynamixel_hardware]: [RxPacketError] Hardware error occurred. Check the error at Control Table (Hardware Error Status)!
+[2026-10-28 02:01:15.030] [ERROR] [dynamixel_hardware]: ID 1 Hardware Error Status = 0x21: Input Voltage Error (bit0), Overload Error (bit5). Torque disabled by servo.
+[2026-10-28 02:01:15.900] [WARN] [dynamixel_hardware]: [TxRxResult] There is no status packet! (ID 1)
+[2026-10-28 02:01:19.400] [INFO] [dynamixel_hardware]: Rebooting ID 1 to clear hardware error
+[2026-10-28 02:01:21.880] [INFO] [dynamixel_hardware]: Torque enabled on ID 1
+[2026-10-28 02:02:48.300] [INFO] [gripper_controller]: Grasp succeeded, position 0.62, effort 220
+[2026-10-28 02:03:44.190] [WARN] [dynamixel_hardware]: ID 1 present input voltage 10.2 V (min voltage limit 9.5 V, nominal 12.0 V)
+[2026-10-28 02:03:44.240] [ERROR] [dynamixel_hardware]: [RxPacketError] Hardware error occurred. Check the error at Control Table (Hardware Error Status)!
+[2026-10-28 02:03:44.251] [ERROR] [dynamixel_hardware]: ID 1 Hardware Error Status = 0x21: Input Voltage Error (bit0), Overload Error (bit5). Torque disabled by servo.
+[2026-10-28 02:03:45.002] [WARN] [dynamixel_hardware]: [TxRxResult] There is no status packet! (ID 1)
+[2026-10-28 02:03:48.600] [INFO] [dynamixel_hardware]: Rebooting ID 1 to clear hardware error
+[2026-10-28 02:03:51.090] [INFO] [dynamixel_hardware]: Torque enabled on ID 1
+[2026-10-28 02:07:13.401] [WARN] [dynamixel_hardware]: ID 1 present input voltage 9.9 V (min voltage limit 9.5 V, nominal 12.0 V)
+[2026-10-28 02:07:13.455] [ERROR] [dynamixel_hardware]: [RxPacketError] Hardware error occurred. Check the error at Control Table (Hardware Error Status)!
+[2026-10-28 02:07:13.466] [ERROR] [dynamixel_hardware]: ID 1 Hardware Error Status = 0x21: Input Voltage Error (bit0), Overload Error (bit5). Torque disabled by servo.
+[2026-10-28 02:07:17.800] [INFO] [dynamixel_hardware]: Rebooting ID 1 to clear hardware error
+[2026-10-28 02:07:20.300] [INFO] [dynamixel_hardware]: Torque enabled on ID 1
+[2026-10-28 02:10:31.500] [WARN] [dynamixel_hardware]: ID 1 present input voltage 10.1 V (min voltage limit 9.5 V, nominal 12.0 V)
+[2026-10-28 02:10:31.566] [ERROR] [dynamixel_hardware]: [RxPacketError] Hardware error occurred. Check the error at Control Table (Hardware Error Status)!
+[2026-10-28 02:10:31.577] [ERROR] [dynamixel_hardware]: ID 1 Hardware Error Status = 0x21: Input Voltage Error (bit0), Overload Error (bit5). Torque disabled by servo.
+[2026-10-28 02:10:36.100] [INFO] [dynamixel_hardware]: Rebooting ID 1 to clear hardware error
+[2026-10-28 02:10:38.550] [INFO] [dynamixel_hardware]: Torque enabled on ID 1
+[2026-10-28 02:13:02.000] [INFO] [gripper_controller]: Grasp succeeded, position 0.61, effort 215
+[2026-10-28 02:16:58.577] [WARN] [dynamixel_hardware]: ID 1 present input voltage 9.7 V (min voltage limit 9.5 V, nominal 12.0 V)
+[2026-10-28 02:16:58.644] [ERROR] [dynamixel_hardware]: [RxPacketError] Hardware error occurred. Check the error at Control Table (Hardware Error Status)!
+[2026-10-28 02:16:58.655] [ERROR] [dynamixel_hardware]: ID 1 Hardware Error Status = 0x21: Input Voltage Error (bit0), Overload Error (bit5). Torque disabled by servo.
+[2026-10-28 02:17:03.200] [INFO] [dynamixel_hardware]: Rebooting ID 1 to clear hardware error
+[2026-10-28 02:17:05.700] [INFO] [dynamixel_hardware]: Torque enabled on ID 1
