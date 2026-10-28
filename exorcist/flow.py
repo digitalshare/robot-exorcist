@@ -16,9 +16,22 @@ from crewai.flow.flow import Flow, listen, start
 from . import parasail
 from .cluster import build_candidates
 from .config import settings
-from .crew import enforce_citations, field_crew, investigation_crew, ActionResults
+from .crew import diagnose_direct, enforce_citations, field_crew, investigation_crew
 from .logs import LogEvent, load_scenario
-from .schemas import Action, Diagnosis, EvidenceList, IncidentCandidate, RunState, TriageResult, TriagedIncident, Verdict
+from .schemas import Action, Diagnosis, Evidence, EvidenceList, IncidentCandidate, RunState, TriageResult, TriagedIncident, Verdict
+
+
+def _parse_evidence(raw: str) -> EvidenceList | None:
+    """Tolerant JSON extraction from an agent's raw answer."""
+    start, end = raw.find("{"), raw.rfind("}")
+    if start == -1 or end == -1:
+        start, end = raw.find("["), raw.rfind("]")
+    if start == -1 or end == -1:
+        return None
+    try:
+        return EvidenceList.model_validate(json.loads(raw[start : end + 1]))
+    except Exception:
+        return None
 
 
 class EventBus:
@@ -161,20 +174,33 @@ class ExorcismFlow(Flow[RunState]):
                         f"{o.id} [{cands[o.id].system}] {o.title}: {cands[o.id].count}x between {cands[o.id].first_ts[11:19]} and {cands[o.id].last_ts[11:19]}"
                         for o in tri if o.id != t.id and o.id in cands
                     ]
-                    crew = investigation_crew(cands[t.id], t, self.robot, observer, others)
-                    out = await asyncio.to_thread(crew.kickoff)
+                    reads: list[dict] = []
+
+                    def observe(kind: str, payload: dict):
+                        if kind == "read":
+                            reads.append(payload)
+                        observer(kind, payload)
+
+                    crew = investigation_crew(cands[t.id], t, self.robot, observe, others)
                     ev: EvidenceList | None = None
                     diag: Diagnosis | None = None
-                    for task_out in out.tasks_output:
-                        p = task_out.pydantic
-                        if isinstance(p, EvidenceList):
-                            ev = p
-                        elif isinstance(p, Diagnosis):
-                            diag = p
-                    if ev is None:
-                        ev = EvidenceList(evidence=[])
+                    try:
+                        out = await asyncio.to_thread(crew.kickoff)
+                        for task_out in out.tasks_output:
+                            p = task_out.pydantic
+                            if isinstance(p, EvidenceList):
+                                ev = p
+                            elif isinstance(p, Diagnosis):
+                                diag = p
+                            elif ev is None and task_out.raw:
+                                ev = _parse_evidence(task_out.raw)
+                    except Exception as e:  # agent output could not be parsed: keep the research, diagnose with a locked schema
+                        self.bus.emit("note", incident_id=t.id, text=f"agent output unusable ({type(e).__name__}); diagnosing from collected evidence")
+                    if ev is None or not ev.evidence:
+                        # the pages the researcher actually read are evidence in their own right
+                        ev = EvidenceList(evidence=[Evidence(url=r["url"], title=r.get("title", ""), why_relevant="page read by the researcher") for r in reads])
                     if diag is None:
-                        raise RuntimeError("diagnostician returned no Diagnosis")
+                        diag = await asyncio.to_thread(diagnose_direct, cands[t.id], t, self.robot, ev, others)
                     diag.incident_id = t.id
                     diag = enforce_citations(diag, ev)
                     self.state.evidence[t.id] = ev

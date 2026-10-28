@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from typing import Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 
 class IncidentCandidate(BaseModel):
@@ -43,7 +43,32 @@ class Evidence(BaseModel):
 
 class EvidenceList(BaseModel):
     queries_used: list[str] = []
-    evidence: list[Evidence]
+    evidence: list[Evidence] = []
+
+    @model_validator(mode="before")
+    @classmethod
+    def _aliases(cls, data):
+        """Open models rename the list (quotes, sources, items, results) or return a bare list. Accept all of them."""
+        if isinstance(data, list):
+            return {"evidence": data}
+        if isinstance(data, dict) and "evidence" not in data:
+            for k in ("quotes", "sources", "items", "results", "evidence_list", "findings"):
+                if isinstance(data.get(k), list):
+                    data = dict(data)
+                    data["evidence"] = data.pop(k)
+                    break
+        if isinstance(data, dict):
+            fixed = []
+            for e in data.get("evidence") or []:
+                if isinstance(e, dict):
+                    e = dict(e)
+                    e.setdefault("quote", e.pop("excerpt", e.pop("text", "")))
+                    e.setdefault("why_relevant", e.pop("relevance", e.pop("why", "")))
+                    e.setdefault("title", e.pop("source", "") if isinstance(e.get("source"), str) else "")
+                    if e.get("url"):
+                        fixed.append(e)
+            data["evidence"] = fixed
+        return data
 
 
 class Cause(BaseModel):

@@ -9,6 +9,7 @@ from crewai import Agent, Crew, LLM, Process, Task
 from crewai.mcp import MCPServerStdio
 from pydantic import BaseModel
 
+from . import parasail
 from .config import PARASAIL_BASE_URL, settings
 from .schemas import Action, Diagnosis, EvidenceList, TriagedIncident, IncidentCandidate
 from .tools import make_tools, make_action_tools
@@ -154,3 +155,22 @@ def field_crew(actions: list[Action], observer: Callable[[str, dict], None] | No
         output_pydantic=ActionResults,
     )
     return Crew(agents=[tech], tasks=[task], process=Process.sequential, verbose=False)
+
+
+DIAGNOSE_SYSTEM = (
+    "You are a senior robotics integrator diagnosing one incident from log lines, the robot cell context and a list of researched evidence. "
+    "Rank likely causes with confidence in [0,1]; each cause may only cite URLs from the evidence list. Set verdict exorcise/watch/benign and give 3-6 concrete fix steps."
+)
+
+
+def diagnose_direct(cand: IncidentCandidate, tri: TriagedIncident, robot: dict, evidence: EvidenceList, others: list[str] | None = None) -> Diagnosis:
+    """Fallback when the Diagnostician agent's output cannot be parsed: same reasoning, server-enforced schema."""
+    user = (
+        f"Incident {cand.id}: {tri.title}\nSubsystem: {tri.subsystem}. Occurrences: {cand.count} between {cand.first_ts} and {cand.last_ts}.\n"
+        f"Log lines:\n" + "\n".join(cand.samples) + f"\n\nRobot cell:\n{json.dumps(robot, indent=1)[:2500]}\n"
+        + ("Other incidents in the same cell:\n" + "\n".join("  - " + o for o in others) + "\n" if others else "")
+        + "\nEvidence:\n" + json.dumps([e.model_dump() for e in evidence.evidence], ensure_ascii=False)[:6000]
+    )
+    d = parasail.chat_json(DIAGNOSE_SYSTEM, user, Diagnosis, max_tokens=3000)
+    d.incident_id = cand.id
+    return d

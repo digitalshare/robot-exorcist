@@ -57,6 +57,7 @@ function handle(ev) {
     case "evidence": state.evidence[ev.incident_id] = ev.evidence; renderInvestigation(); break;
     case "diagnosis": state.diagnoses[ev.incident_id] = ev.diagnosis; renderIncidents(); renderInvestigation(); break;
     case "investigation_failed": step(ev.incident_id, { kind: "fail", error: ev.error }); break;
+    case "note": step(ev.incident_id, { kind: "note", text: ev.text }); break;
     case "verdict": state.verdict = ev.verdict; renderVerdict(); break;
     case "actions": state.actions = ev.actions; renderActions(); break;
     case "error": $("#verdict").innerHTML += `<p class="err">${esc(ev.error)}\n${esc(ev.trace || "")}</p>`; break;
@@ -89,7 +90,11 @@ function renderIncidents() {
 }
 
 function select(id) { state.selected = id; renderIncidents(); renderInvestigation(); }
-function step(id, s) { (state.steps[id] ||= []).push(s); if (state.selected === id || !state.selected) { state.selected = id; renderInvestigation(); renderIncidents(); } }
+function step(id, s) {
+  const arr = (state.steps[id] ||= []);
+  const key = s.kind === "search" ? "q:" + s.query : s.kind === "read" ? "u:" + s.url : null;
+  const dup = key && arr.find((x) => x.key === key);
+  if (dup) { dup.n = (dup.n || 1) + 1; } else { arr.push(Object.assign(s, { key })); } if (state.selected === id || !state.selected) { state.selected = id; renderInvestigation(); renderIncidents(); } }
 
 function renderInvestigation() {
   const id = state.selected; if (!id) return;
@@ -99,9 +104,10 @@ function renderInvestigation() {
   if (!steps.length && !d) h += `<p class="muted">${t && t.decision === "watch" ? "Triage marked this as watch-only; not investigated." : "Waiting for an investigator…"}</p>`;
   for (const s of steps) {
     if (s.kind === "start") h += `<div class="step">Investigation crew started</div>`;
-    if (s.kind === "search") h += `<div class="step search">🔎 <span class="q">${esc(s.query)}</span><div class="res">${s.results.slice(0, 4).map((r) => `<a href="${esc(r.url)}" target="_blank">${esc(r.title || r.url).slice(0, 70)}</a>`).join(" · ")}</div></div>`;
-    if (s.kind === "read") h += `<div class="step read">📖 <a href="${esc(s.url)}" target="_blank">${esc(s.title).slice(0, 90)}</a> <span class="res">${s.chars} chars</span></div>`;
+    if (s.kind === "search") h += `<div class="step search">🔎 <span class="q">${esc(s.query)}</span>${s.n > 1 ? ` <span class="res">×${s.n}</span>` : ""}<div class="res">${s.results.slice(0, 4).map((r) => `<a href="${esc(r.url)}" target="_blank">${esc(r.title || r.url).slice(0, 70)}</a>`).join(" · ")}</div></div>`;
+    if (s.kind === "read") h += `<div class="step read">📖 <a href="${esc(s.url)}" target="_blank">${esc(s.title || hostOf(s.url)).slice(0, 90)}</a> <span class="res">${s.chars} chars${s.n > 1 ? ` ×${s.n}` : ""}</span></div>`;
     if (s.kind === "fail") h += `<div class="step err">✖ ${esc(s.error)}</div>`;
+    if (s.kind === "note") h += `<div class="step muted">ℹ ${esc(s.text)}</div>`;
   }
   if (d) {
     h += `<div class="diag"><h3><span class="badge ${d.verdict}">${d.verdict}</span> <span class="badge ${d.severity}">${d.severity}</span> ${esc(d.summary)}</h3>`;

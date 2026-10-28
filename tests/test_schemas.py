@@ -18,3 +18,11 @@ def test_strict_schemas_close_every_object():
         seen = []
         _walk(_strict_schema(model), seen)
         assert seen and all(ap is False and req for ap, req in seen), model.__name__
+
+
+def test_evidence_list_accepts_aliases():
+    from exorcist.schemas import EvidenceList
+
+    e = EvidenceList.model_validate({"quotes": [{"url": "https://a", "excerpt": "x", "relevance": "y"}, {"title": "no url"}]})
+    assert len(e.evidence) == 1 and e.evidence[0].quote == "x" and e.evidence[0].why_relevant == "y"
+    assert EvidenceList.model_validate([{"url": "https://b"}]).evidence[0].url == "https://b"
