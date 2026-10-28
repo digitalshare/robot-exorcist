@@ -1,0 +1,91 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 420" font-family="-apple-system,Inter,Segoe UI,Roboto,sans-serif" font-size="13">
+  <defs>
+    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0 0L10 5 0 10z" fill="#8a90a3"/></marker>
+    <style>
+      .box{fill:#171b26;stroke:#3a4157;stroke-width:1.2;rx:10}
+      .lane{fill:none;stroke:#2a3040;stroke-dasharray:4 4}
+      .t{fill:#e7e9f0}.m{fill:#8a90a3;font-size:11px}.p{font-size:11px;font-weight:700}
+      .you{fill:#4fa3ff}.para{fill:#ffcc4d}.one{fill:#5ad77a}.crew{fill:#9b7bff}
+      .w{fill:none;stroke:#8a90a3;stroke-width:1.5;marker-end:url(#a)}
+      .ico{fill:none;stroke:#e7e9f0;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+    </style>
+  </defs>
+  <rect width="1000" height="420" fill="#0a0c12"/>
+  <text x="20" y="28" class="t" font-size="18" font-weight="700">Robot Exorcist: how a possessed robot gets diagnosed</text>
+  <text x="20" y="48" class="m">CrewAI Flow. Grounding (You.com) and reasoning (Parasail) are separate steps; the only exit to the real world is One.</text>
+
+  <!-- stage boxes -->
+  <g transform="translate(20,80)">
+    <rect class="box" width="140" height="92"/>
+    <g class="ico" transform="translate(12,12)"><path d="M3 2h14v16H3zM6 6h8M6 10h8M6 14h5"/></g>
+    <text x="40" y="26" class="t" font-weight="700">1. Ingest</text>
+    <text x="12" y="52" class="m">robot.yaml + logs from</text><text x="12" y="66" class="m">UR, Dynamixel, ROS 2/Nav2</text>
+    <text x="12" y="84" class="p" fill="#8a90a3">deterministic</text>
+  </g>
+  <g transform="translate(185,80)">
+    <rect class="box" width="140" height="92"/>
+    <g class="ico" transform="translate(12,10)"><circle cx="5" cy="6" r="2.5"/><circle cx="15" cy="5" r="2.5"/><circle cx="10" cy="15" r="2.5"/><path d="M7 7.5l1.5 5M13 7l-1.5 5.5M7.5 6h5"/></g>
+    <text x="40" y="26" class="t" font-weight="700">2. Cluster</text>
+    <text x="12" y="52" class="m">embed unique signatures,</text><text x="12" y="66" class="m">merge by meaning or timing</text>
+    <text x="12" y="84" class="p para">Parasail bge-m3</text>
+  </g>
+  <g transform="translate(350,80)">
+    <rect class="box" width="140" height="92"/>
+    <g class="ico" transform="translate(12,10)"><path d="M2 4h16M2 10h10M2 16h6M15 13l2 2 3-4"/></g>
+    <text x="40" y="26" class="t" font-weight="700">3. Triage</text>
+    <text x="12" y="52" class="m">name, severity, investigate</text><text x="12" y="66" class="m">vs watch, search queries</text>
+    <text x="12" y="84" class="p para">Parasail schema JSON</text>
+  </g>
+  <g transform="translate(515,80)">
+    <rect class="box" width="170" height="92"/>
+    <g class="ico" transform="translate(12,10)"><circle cx="8.5" cy="8.5" r="6"/><path d="M13 13l5 5"/></g>
+    <text x="40" y="26" class="t" font-weight="700">4. Investigate ×N</text>
+    <text x="12" y="52" class="m">Researcher: search + read pages</text><text x="12" y="66" class="m">Diagnostician: cited causes</text>
+    <text x="12" y="84" class="p"><tspan class="crew">CrewAI crew</tspan> <tspan class="you">· You.com</tspan> <tspan class="para">· Parasail</tspan></text>
+  </g>
+  <g transform="translate(710,80)">
+    <rect class="box" width="140" height="92"/>
+    <g class="ico" transform="translate(12,10)"><path d="M8 12a4 4 0 0 0 5.6 0l3-3a4 4 0 0 0-5.6-5.6L9.5 5"/><path d="M12 8a4 4 0 0 0-5.6 0l-3 3a4 4 0 0 0 5.6 5.6l1.5-1.5"/></g>
+    <text x="40" y="26" class="t" font-weight="700">5. Correlate</text>
+    <text x="12" y="52" class="m">one ghost or three?</text><text x="12" y="66" class="m">draft alert + issue</text>
+    <text x="12" y="84" class="p para">Parasail schema JSON</text>
+  </g>
+  <g transform="translate(875,80)">
+    <rect class="box" width="105" height="92"/>
+    <g class="ico" transform="translate(12,10)"><path d="M2 8v4h3l7 4V4L5 8zM15 7a4 4 0 0 1 0 6"/></g>
+    <text x="40" y="26" class="t" font-weight="700">6. Act</text>
+    <text x="12" y="52" class="m">approve, then</text><text x="12" y="66" class="m">Slack + GitHub</text>
+    <text x="12" y="84" class="p"><tspan class="crew">CrewAI</tspan> <tspan class="one">· One</tspan></text>
+  </g>
+  <path class="w" d="M160 126H183"/><path class="w" d="M325 126H348"/><path class="w" d="M490 126H513"/><path class="w" d="M685 126H708"/><path class="w" d="M850 126H873"/>
+
+  <!-- inside an investigation crew -->
+  <g transform="translate(20,205)">
+    <rect class="lane" width="960" height="195" rx="10"/>
+    <text x="14" y="22" class="t" font-weight="700">Inside one investigation crew (runs once per incident, two or three at a time)</text>
+    <g transform="translate(20,40)">
+      <rect class="box" width="250" height="130"/>
+      <text x="14" y="24" class="t" font-weight="700">Researcher <tspan class="crew">(CrewAI agent)</tspan></text>
+      <text x="14" y="48" class="m">tools: you_search, you_read</text>
+      <text x="14" y="66" class="m">vendor error-code pages, driver GitHub</text><text x="14" y="80" class="m">issues, ROS Answers, service manuals</text>
+      <text x="14" y="104" class="you p">You.com Search + Contents</text>
+      <text x="14" y="120" class="m">→ EvidenceList: url, title, verbatim quote</text>
+    </g>
+    <path class="w" d="M290 105H330"/>
+    <g transform="translate(335,40)">
+      <rect class="box" width="270" height="130"/>
+      <text x="14" y="24" class="t" font-weight="700">Diagnostician <tspan class="crew">(CrewAI agent)</tspan></text>
+      <text x="14" y="48" class="m">sees log lines, cell context (shared PSU,</text><text x="14" y="62" class="m">other incidents' timing) and the evidence</text>
+      <text x="14" y="86" class="m">ranked causes with confidence,</text><text x="14" y="100" class="m">verdict exorcise / watch / benign, fix steps</text>
+      <text x="14" y="122" class="para p">Parasail · citations enforced in code</text>
+    </g>
+    <path class="w" d="M625 105H665"/>
+    <g transform="translate(670,40)">
+      <rect class="box" width="270" height="130"/>
+      <text x="14" y="24" class="t" font-weight="700">Guard rails</text>
+      <text x="14" y="48" class="m">a cause may only cite URLs the researcher</text><text x="14" y="62" class="m">actually read; others are dropped</text>
+      <text x="14" y="86" class="m">unparseable agent output → same diagnosis</text><text x="14" y="100" class="m">with a server-enforced JSON schema</text>
+      <text x="14" y="122" class="m">no model output is ever cached or scripted</text>
+    </g>
+  </g>
+</svg>

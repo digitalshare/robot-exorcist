@@ -10,11 +10,15 @@ Built at **Hack with YOU: Halloween Edition** (Track 3, The Open Haunt) with Cre
 
 ## The problem
 
+![Three subsystems on one shared bench PSU: each log suggests a local cause, the timeline shows one brownout](docs/haunted-cell.svg)
+
 A lab robot cell starts misbehaving overnight: the UR5e arm protective-stops mid-path, the Dynamixel gripper throws overload errors, the AMR's lidar keeps timing out. Three subsystems, three vendors, three log formats, one tired on-call engineer. Each symptom has a plausible local explanation (bad trajectory, worn gear, dying lidar). The real cause is often shared and invisible from any single log.
 
 Robot Exorcist reads every log, turns them into incidents, researches each one against the real documentation and forum threads, reasons to a cited diagnosis, correlates the incidents into one root cause, and then does what an engineer would do: posts the alert to Slack and opens the GitHub issue with the fix checklist.
 
 ## How the swarm works
+
+![Workflow: ingest, cluster (Parasail), triage (Parasail), investigate per incident with CrewAI crews grounded by You.com, correlate (Parasail), act through One](docs/workflow.svg)
 
 ```
 samples/*.log ─► parse ─► cluster (Parasail embeddings, cosine agglomerative) ─► incident candidates

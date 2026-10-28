@@ -17,9 +17,20 @@
   </div>
 </header>
 
+<nav id="pipeline">
+  <div class="stage" data-stage="ingesting"><span class="ico"></span><b>Ingest</b><small>parse logs</small></div>
+  <div class="stage" data-stage="clustering"><span class="ico"></span><b>Cluster</b><small>Parasail embeddings</small></div>
+  <div class="stage" data-stage="triaging"><span class="ico"></span><b>Triage</b><small>Parasail JSON</small></div>
+  <div class="stage" data-stage="investigating"><span class="ico"></span><b>Investigate</b><small>CrewAI crews · You.com</small></div>
+  <div class="stage" data-stage="correlating"><span class="ico"></span><b>Correlate</b><small>Parasail JSON</small></div>
+  <div class="stage" data-stage="awaiting_approval"><span class="ico"></span><b>Approve</b><small>you</small></div>
+  <div class="stage" data-stage="acting"><span class="ico"></span><b>Act</b><small>CrewAI · One</small></div>
+</nav>
+
 <main>
   <section class="panel" id="p-logs">
-    <h2>Log feed <span class="count" id="log-count"></span></h2>
+    <h2>Robot cell <span class="count" id="log-count"></span></h2>
+    <div class="cell" id="cell"></div>
     <div class="robot" id="robot"></div>
     <div class="logs" id="logs"></div>
   </section>
@@ -48,6 +59,7 @@
   <span>Actions: <b>One</b> → <code id="cfg-targets"></code></span>
   <span>Swarm: <b>CrewAI</b> Flow + crews</span>
 </footer>
+<script src="/static/icons.js"></script>
 <script src="/static/app.js"></script>
 </body>
 </html>
