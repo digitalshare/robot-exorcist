@@ -41,6 +41,7 @@ function setStatus(s) {
   const el = $("#status"); el.textContent = s.replace("_", " ");
   el.className = "status " + (["done", "error", "awaiting_approval", "idle"].includes(s) ? s : "running");
   if (["done", "error"].includes(s)) $("#start").disabled = false;
+  if (state.actions && state.actions.length) renderActions(); // approval buttons depend on status
 }
 
 function handle(ev) {
