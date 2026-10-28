@@ -57,7 +57,7 @@ function handle(ev) {
     case "evidence": state.evidence[ev.incident_id] = ev.evidence; renderInvestigation(); break;
     case "diagnosis": state.diagnoses[ev.incident_id] = ev.diagnosis; renderIncidents(); renderInvestigation(); break;
     case "investigation_failed": step(ev.incident_id, { kind: "fail", error: ev.error }); break;
-    case "verdict": state.verdict = ev.verdict; state.actions = ev.verdict.actions || []; renderVerdict(); renderActions(); break;
+    case "verdict": state.verdict = ev.verdict; renderVerdict(); break;
     case "actions": state.actions = ev.actions; renderActions(); break;
     case "error": $("#verdict").innerHTML += `<p class="err">${esc(ev.error)}\n${esc(ev.trace || "")}</p>`; break;
     case "field_agent_failed": $("#act-hint").textContent = "field agent failed, using deterministic One executor"; break;

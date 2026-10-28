@@ -63,10 +63,15 @@ class Diagnosis(BaseModel):
     open_questions: list[str] = []
 
 
-class Action(BaseModel):
+class ActionDraft(BaseModel):
+    """What the incident commander drafts. Execution state lives on Action, which the model never fills."""
+
     kind: Literal["slack_alert", "github_issue"]
     title: str
     body: str
+
+
+class Action(ActionDraft):
     status: Literal["proposed", "approved", "done", "failed", "skipped"] = "proposed"
     result_url: str | None = None
     result_note: str | None = None
@@ -80,7 +85,7 @@ class Verdict(BaseModel):
     confidence: float = Field(ge=0, le=1)
     narrative: str = Field(description="3-6 sentences tying the timeline and the evidence together")
     recommended_fix: list[str]
-    actions: list[Action]
+    actions: list[ActionDraft]
 
 
 class RunState(BaseModel):
@@ -94,4 +99,5 @@ class RunState(BaseModel):
     evidence: dict[str, EvidenceList] = {}
     diagnoses: dict[str, Diagnosis] = {}
     verdict: Verdict | None = None
+    actions: list[Action] = []
     error: str | None = None

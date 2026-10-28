@@ -216,32 +216,35 @@ class ExorcismFlow(Flow[RunState]):
         )
         verdict = parasail.chat_json(CORRELATE_SYSTEM, user, Verdict, max_tokens=4500)
         self.state.verdict = verdict
+        self.state.actions = [Action(**a.model_dump()) for a in verdict.actions]
         self.bus.emit("verdict", verdict=verdict.model_dump(), model=settings.parasail_model)
+        self.bus.emit("actions", actions=[a.model_dump() for a in self.state.actions])
         return verdict
 
     @listen(correlate)
     def act(self, verdict: Verdict):
-        if not verdict.actions:
+        actions = self.state.actions
+        if not actions:
             self._status("done")
             return verdict
         self._status("awaiting_approval")
         if self.skip_actions:
             self.approve(set())
         elif self.auto:
-            self.approve({a.kind for a in verdict.actions})
+            self.approve({a.kind for a in actions})
         self.approval.wait()
-        approved = [a for a in verdict.actions if a.kind in self.approved_kinds]
-        for a in verdict.actions:
+        approved = [a for a in actions if a.kind in self.approved_kinds]
+        for a in actions:
             if a.kind not in self.approved_kinds:
                 a.status = "skipped"
         if not approved:
             self._status("done")
-            self.bus.emit("actions", actions=[a.model_dump() for a in verdict.actions])
+            self.bus.emit("actions", actions=[a.model_dump() for a in actions])
             return verdict
         self._status("acting")
         for a in approved:
             a.status = "approved"
-        self.bus.emit("actions", actions=[a.model_dump() for a in verdict.actions])
+        self.bus.emit("actions", actions=[a.model_dump() for a in actions])
         results: dict[str, dict] = {}
 
         def on_action(kind: str, payload: dict):
@@ -269,7 +272,7 @@ class ExorcismFlow(Flow[RunState]):
             a.status = "done" if r["ok"] else "failed"
             a.result_url = r.get("url")
             a.result_note = (r.get("via") or "") + (f": {r['note']}" if r.get("note") else "")
-        self.bus.emit("actions", actions=[a.model_dump() for a in verdict.actions])
+        self.bus.emit("actions", actions=[a.model_dump() for a in actions])
         self._status("done")
         return verdict
 
