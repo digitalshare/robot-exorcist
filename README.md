@@ -64,7 +64,7 @@ uv run pytest                                       # parsers, clustering (offli
 | Variable | Purpose |
 |---|---|
 | `YDC_API_KEY` | You.com Search + Contents (`X-API-Key`) |
-| `PARASAIL_API_KEY`, `PARASAIL_MODEL`, `PARASAIL_EMBED_MODEL` | Parasail inference and embeddings; defaults `parasail-qwen3-235b-a22b-instruct-2507` and `parasail-ai/GritLM-7B-vllm` |
+| `PARASAIL_API_KEY`, `PARASAIL_MODEL`, `PARASAIL_EMBED_MODEL` | Parasail inference and embeddings; defaults `parasail-qwen3-235b-a22b-instruct-2507` and `parasail-bge-m3` |
 | `PARASAIL_RPM` | client-side throttle (free keys: 5, paid: 500) |
 | `ONE_SECRET` | One API key for `@withone/mcp`; optional `ONE_CONNECTION_KEYS` pins Slack/GitHub connections |
 | `SLACK_CHANNEL`, `GITHUB_REPO` | where the Field Tech posts and files |

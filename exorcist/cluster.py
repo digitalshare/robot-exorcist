@@ -12,20 +12,17 @@ from .schemas import IncidentCandidate
 Embedder = Callable[[list[str]], list[list[float]]]
 
 
-def _agglomerate(vecs: np.ndarray, threshold: float) -> list[int]:
-    """Average-linkage agglomerative clustering on cosine similarity. Small n, so O(n^3) is fine."""
-    n = len(vecs)
+def _agglomerate_affinity(aff: np.ndarray, threshold: float) -> list[int]:
+    """Average-linkage agglomerative clustering on a pairwise affinity matrix. Small n, so O(n^3) is fine."""
+    n = len(aff)
     if n == 0:
         return []
-    v = vecs / (np.linalg.norm(vecs, axis=1, keepdims=True) + 1e-9)
     clusters: list[list[int]] = [[i] for i in range(n)]
     while len(clusters) > 1:
         best, bi, bj = -1.0, -1, -1
-        cents = [v[c].mean(axis=0) for c in clusters]
-        cents = [c / (np.linalg.norm(c) + 1e-9) for c in cents]
         for i in range(len(clusters)):
             for j in range(i + 1, len(clusters)):
-                s = float(cents[i] @ cents[j])
+                s = float(aff[np.ix_(clusters[i], clusters[j])].mean())
                 if s > best:
                     best, bi, bj = s, i, j
         if best < threshold:
@@ -38,7 +35,37 @@ def _agglomerate(vecs: np.ndarray, threshold: float) -> list[int]:
     return labels
 
 
-def build_candidates(events: list[LogEvent], embedder: Embedder, *, threshold: float = 0.86, per_system: bool = True) -> list[IncidentCandidate]:
+def _ts_seconds(ts: str) -> float | None:
+    try:
+        from datetime import datetime
+
+        return datetime.fromisoformat(ts.replace(" ", "T")).timestamp()
+    except Exception:
+        return None
+
+
+def _cooccurrence(a: list[float], b: list[float], window: float) -> float:
+    """Highest of: share of A occurrences with a B within `window` s, and vice versa (a rare warning that always fires inside a burst joins it)."""
+    if not a or not b:
+        return 0.0
+
+    def rate(x, y):
+        y = sorted(y)
+        hits = 0
+        for t in x:
+            lo = np.searchsorted(y, t - window)
+            if lo < len(y) and abs(y[lo] - t) <= window:
+                hits += 1
+            elif lo > 0 and abs(y[lo - 1] - t) <= window:
+                hits += 1
+        return hits / len(x)
+
+    return max(rate(a, b), rate(b, a))
+
+
+def build_candidates(events: list[LogEvent], embedder: Embedder, *, threshold: float = 0.78, window: float = 3.0, cooccur: float = 0.75, per_system: bool = True) -> list[IncidentCandidate]:
+    """Two signatures belong to one incident if they mean the same thing (embedding cosine >= threshold)
+    or if they keep happening together (>= `cooccur` of their occurrences within `window` seconds)."""
     warn_plus = interesting(events)
     if not warn_plus:
         return []
@@ -49,6 +76,9 @@ def build_candidates(events: list[LogEvent], embedder: Embedder, *, threshold: f
     sigs = list(by_sig.keys())
     texts = [f"[{by_sig[s][0].system}] [{by_sig[s][0].source}] {normalize(by_sig[s][0].text)}" for s in sigs]
     vecs = np.array(embedder(texts), dtype=float)
+    unit = vecs / (np.linalg.norm(vecs, axis=1, keepdims=True) + 1e-9)
+    cos = unit @ unit.T
+    times = [[t for t in (_ts_seconds(e.ts) for e in by_sig[s]) if t is not None] for s in sigs]
 
     # cluster within each system (a UR fault and an AMR fault are different incidents even if the words rhyme)
     groups: dict[str, list[int]] = defaultdict(list)
@@ -58,7 +88,16 @@ def build_candidates(events: list[LogEvent], embedder: Embedder, *, threshold: f
     candidates: list[IncidentCandidate] = []
     n = 0
     for system, idxs in groups.items():
-        labels = _agglomerate(vecs[idxs], threshold)
+        sub = np.zeros((len(idxs), len(idxs)))
+        for a, i in enumerate(idxs):
+            for b, j in enumerate(idxs):
+                if a == b:
+                    sub[a, b] = 1.0
+                    continue
+                sem = cos[i, j] / threshold  # 1.0 at the semantic threshold
+                tmp = 1.0 if _cooccurrence(times[i], times[j], window) >= cooccur else 0.0
+                sub[a, b] = max(min(sem, 1.0) if sem >= 1.0 else cos[i, j], tmp)
+        labels = _agglomerate_affinity(sub, threshold)
         members: dict[int, list[int]] = defaultdict(list)
         for local, lab in enumerate(labels):
             members[lab].append(idxs[local])

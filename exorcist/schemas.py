@@ -84,8 +84,8 @@ class Verdict(BaseModel):
 
 
 class RunState(BaseModel):
-    run_id: str
-    scenario: str
+    run_id: str = ""
+    scenario: str = ""
     status: str = "idle"
     robot: dict = {}
     events_total: int = 0

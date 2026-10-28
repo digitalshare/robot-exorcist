@@ -106,7 +106,7 @@ def cmd_run(args) -> int:
 
     bus = EventBus()
     bus.printer = _print_event
-    flow = run_flow(args.scenario, bus, auto=args.auto)
+    flow = run_flow(args.scenario, bus, auto=args.auto, skip_actions=args.skip_actions)
     if args.json:
         print(flow.state.model_dump_json(indent=1))
     return 0 if flow.state.status == "done" else 1
@@ -127,6 +127,7 @@ def main(argv: list[str] | None = None) -> int:
     r.add_argument("scenario", nargs="?", default="samples/haunted_cell")
     r.add_argument("--auto", action="store_true", help="approve actions without asking")
     r.add_argument("--json", action="store_true", help="dump final state as JSON")
+    r.add_argument("--skip-actions", action="store_true", help="stop after the verdict; do not touch Slack/GitHub")
     r.set_defaults(fn=cmd_run)
     s = sub.add_parser("serve", help="web console")
     s.add_argument("--port", type=int, default=settings.port)

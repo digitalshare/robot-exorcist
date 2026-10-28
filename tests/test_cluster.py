@@ -25,6 +25,7 @@ def fake_embedder(texts):
 def test_candidates_group_by_system_and_rank_errors_first():
     _, events = load_scenario("samples/haunted_cell")
     cands = build_candidates(events, fake_embedder, threshold=0.5)
+    assert 3 <= len(cands) <= 7, [c.signature for c in cands]
     assert cands, "expected incident candidates"
     assert cands[0].level == "ERROR"
     systems = {c.system for c in cands}

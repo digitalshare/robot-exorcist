@@ -73,12 +73,13 @@ CORRELATE_SYSTEM = (
 class ExorcismFlow(Flow[RunState]):
     """CrewAI Flow. State is a RunState (pydantic)."""
 
-    def __init__(self, scenario: str, bus: EventBus, auto: bool = False, max_incidents: int = 5):
+    def __init__(self, scenario: str, bus: EventBus, auto: bool = False, max_incidents: int = 5, skip_actions: bool = False):
         super().__init__()
         self.scenario = scenario
         self.bus = bus
         self.auto = auto
         self.max_incidents = max_incidents
+        self.skip_actions = skip_actions
         self.robot: dict = {}
         self.events: list[LogEvent] = []
         self.approval = threading.Event()
@@ -217,7 +218,9 @@ class ExorcismFlow(Flow[RunState]):
             self._status("done")
             return verdict
         self._status("awaiting_approval")
-        if self.auto:
+        if self.skip_actions:
+            self.approve(set())
+        elif self.auto:
             self.approve({a.kind for a in verdict.actions})
         self.approval.wait()
         approved = [a for a in verdict.actions if a.kind in self.approved_kinds]
@@ -266,8 +269,8 @@ class ExorcismFlow(Flow[RunState]):
         self.approval.set()
 
 
-def run_flow(scenario: str, bus: EventBus, auto: bool) -> ExorcismFlow:
-    flow = ExorcismFlow(scenario, bus, auto=auto)
+def run_flow(scenario: str, bus: EventBus, auto: bool, skip_actions: bool = False) -> ExorcismFlow:
+    flow = ExorcismFlow(scenario, bus, auto=auto, skip_actions=skip_actions)
     try:
         flow.kickoff()
     except Exception as e:

@@ -25,7 +25,7 @@ class Settings:
     ydc_api_key: str = field(default_factory=lambda: _env("YDC_API_KEY"))
     parasail_api_key: str = field(default_factory=lambda: _env("PARASAIL_API_KEY"))
     parasail_model: str = field(default_factory=lambda: _env("PARASAIL_MODEL", "parasail-qwen3-235b-a22b-instruct-2507"))
-    parasail_embed_model: str = field(default_factory=lambda: _env("PARASAIL_EMBED_MODEL", "parasail-ai/GritLM-7B-vllm"))
+    parasail_embed_model: str = field(default_factory=lambda: _env("PARASAIL_EMBED_MODEL", "parasail-bge-m3"))
     parasail_rpm: int = field(default_factory=lambda: int(_env("PARASAIL_RPM", "60")))
     one_secret: str = field(default_factory=lambda: _env("ONE_SECRET"))
     one_connection_keys: str = field(default_factory=lambda: _env("ONE_CONNECTION_KEYS"))
