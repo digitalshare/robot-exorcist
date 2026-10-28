@@ -57,3 +57,64 @@ class YouReadTool(BaseTool):
 
 def make_tools(incident_id: str, observer: Observer | None = None) -> list[BaseTool]:
     return [YouSearchTool(incident_id=incident_id, observer=observer), YouReadTool(incident_id=incident_id, observer=observer)]
+
+
+# ---------------------------------------------------------------- One (actions)
+# The Field Tech agent gets two narrow tools. Each one drives One's MCP server
+# (find_one_actions -> execute_one_action) and returns the upstream result, so the
+# URL the agent reports is the URL One returned, never an invention.
+
+
+class SlackInput(BaseModel):
+    text: str = Field(description="The full alert text to post (Slack mrkdwn allowed)")
+
+
+class IssueInput(BaseModel):
+    title: str = Field(description="Issue title")
+    body: str = Field(description="Issue body in Markdown")
+
+
+class OneSlackTool(BaseTool):
+    name: str = "post_slack_alert"
+    description: str = "Post an alert message to the team's incident Slack channel through One. Returns JSON {ok, url, note}."
+    args_schema: type[BaseModel] = SlackInput
+    observer: Observer | None = None
+
+    def _run(self, text: str) -> str:
+        from . import one_exec
+
+        try:
+            r = one_exec.run(one_exec.execute("slack_alert", "alert", text))
+        except Exception as e:
+            r = {"ok": False, "url": None, "note": f"{type(e).__name__}: {e}"}
+        out = {"ok": bool(r.get("ok")), "url": r.get("url"), "note": r.get("note") or ""}
+        if not out["ok"] and r.get("raw") is not None:
+            out["note"] = (out["note"] + " " + json.dumps(r["raw"])[:400]).strip()
+        if self.observer:
+            self.observer("action_result", {"kind": "slack_alert", **out, "text": text})
+        return json.dumps(out)
+
+
+class OneGitHubTool(BaseTool):
+    name: str = "open_github_issue"
+    description: str = "Open a GitHub issue in the team's robot repository through One. Returns JSON {ok, url, note}."
+    args_schema: type[BaseModel] = IssueInput
+    observer: Observer | None = None
+
+    def _run(self, title: str, body: str) -> str:
+        from . import one_exec
+
+        try:
+            r = one_exec.run(one_exec.execute("github_issue", title, body))
+        except Exception as e:
+            r = {"ok": False, "url": None, "note": f"{type(e).__name__}: {e}"}
+        out = {"ok": bool(r.get("ok")), "url": r.get("url"), "note": r.get("note") or ""}
+        if not out["ok"] and r.get("raw") is not None:
+            out["note"] = (out["note"] + " " + json.dumps(r["raw"])[:400]).strip()
+        if self.observer:
+            self.observer("action_result", {"kind": "github_issue", **out, "title": title, "body": body})
+        return json.dumps(out)
+
+
+def make_action_tools(observer: Observer | None = None) -> list[BaseTool]:
+    return [OneSlackTool(observer=observer), OneGitHubTool(observer=observer)]

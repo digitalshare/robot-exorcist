@@ -36,9 +36,9 @@ class TriageResult(BaseModel):
 
 class Evidence(BaseModel):
     url: str
-    title: str
-    quote: str = Field(description="Verbatim excerpt (<= 60 words) from the page that supports or refutes a cause")
-    why_relevant: str
+    title: str = ""
+    quote: str = Field(default="", description="Verbatim excerpt (<= 60 words) from the page that supports or refutes a cause")
+    why_relevant: str = ""
 
 
 class EvidenceList(BaseModel):
@@ -48,18 +48,18 @@ class EvidenceList(BaseModel):
 
 class Cause(BaseModel):
     cause: str
-    confidence: float = Field(ge=0, le=1)
-    evidence_urls: list[str] = Field(description="URLs from the evidence list that support this cause")
-    reasoning: str
+    confidence: float = Field(default=0.5, ge=0, le=1)
+    evidence_urls: list[str] = Field(default_factory=list, description="URLs from the evidence list that support this cause")
+    reasoning: str = ""
 
 
 class Diagnosis(BaseModel):
-    incident_id: str
+    incident_id: str = ""
     verdict: Literal["exorcise", "watch", "benign"] = Field(description="exorcise = act now, watch = monitor, benign = false alarm")
     severity: Literal["low", "medium", "high", "critical"]
-    summary: str
-    causes: list[Cause] = Field(description="Ranked, most likely first")
-    fix_steps: list[str]
+    summary: str = ""
+    causes: list[Cause] = Field(default_factory=list, description="Ranked, most likely first")
+    fix_steps: list[str] = []
     open_questions: list[str] = []
 
 

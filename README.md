@@ -26,7 +26,7 @@ samples/*.log ─► parse ─► cluster (Parasail embeddings, cosine agglomera
 2. **Triage.** One schema-locked Parasail call names each incident, scores severity, decides *investigate* vs *watch*, and writes the search queries an expert would type.
 3. **Investigate.** For every incident a two-agent CrewAI crew runs (concurrency-limited): the **Researcher** searches You.com and reads the pages (vendor docs, GitHub issues, ROS Answers) and returns verbatim quotes; the **Diagnostician** ranks causes with confidence, cites only URLs the researcher actually read (enforced in code), sets a verdict (`exorcise` / `watch` / `benign`) and writes fix steps.
 4. **Correlate.** The incident commander step looks across all diagnoses and the timeline: are these one ghost or three? It produces the headline, the shared root cause (or none), false alarms, and drafts the Slack alert and the GitHub issue.
-5. **Act.** After approval in the console (or `--auto`), the **Field Tech** agent uses One's MCP tools (`list_one_integrations` → `find_one_actions` → `execute_one_action`) to post to Slack and open the issue. A deterministic fallback drives the same One tools if the agent trips. Resulting URLs appear in the console.
+5. **Act.** After approval in the console (or `--auto`), the **Field Tech** agent posts the alert and opens the issue with two tools, `post_slack_alert` and `open_github_issue`. Each tool drives One's MCP server (`find_one_actions` → `execute_one_action`) and returns One's real response, which the flow records as the result. The agent cannot invent a URL: only what One returned is shown. If the agent trips, a deterministic executor drives the same One tools.
 
 Nothing in the output is scripted: swap in different logs (`samples/stuck_joint`) and the swarm tells a different story.
 
@@ -37,7 +37,7 @@ Nothing in the output is scripted: swap in different logs (`samples/stuck_joint`
 | **CrewAI** | The Flow (`exorcist/flow.py`), an investigation crew per incident, the Field Tech crew, MCP tool wiring | there is no swarm; one model call would have to guess everything |
 | **You.com** | Search + Contents are the Researcher's only tools; every citation in a diagnosis comes from a page it read | diagnoses have no evidence; the citation check strips them to zero |
 | **Parasail** | All reasoning (CrewAI `LLM` on the OpenAI-compatible API), embeddings for clustering, server-enforced JSON schemas for triage, diagnosis and verdict | nothing clusters, nothing reasons |
-| **One** | The only path to Slack and GitHub (`@withone/mcp` over stdio, driven by the Field Tech agent and the fallback executor) | the exorcism never leaves the terminal |
+| **One** | The only path to Slack and GitHub (`@withone/mcp` over stdio behind the Field Tech's tools and the fallback executor) | the exorcism never leaves the terminal |
 
 ## Run it
 
@@ -84,10 +84,10 @@ exorcist/logs.py      parsing, normalisation, signatures
 exorcist/cluster.py   embeddings → incident candidates
 exorcist/parasail.py  schema-locked chat + embeddings, retry, RPM throttle
 exorcist/you.py       search / contents (page cache on disk; model outputs are never cached)
-exorcist/tools.py     CrewAI tools you_search / you_read
-exorcist/crew.py      investigation crew, field tech crew (One MCP), citation enforcement
+exorcist/tools.py     CrewAI tools: you_search / you_read (You.com), post_slack_alert / open_github_issue (One)
+exorcist/crew.py      investigation crew, field tech crew, citation enforcement
 exorcist/flow.py      CrewAI Flow + event bus
-exorcist/one_exec.py  deterministic One MCP executor (smoke test + fallback)
+exorcist/one_exec.py  One MCP client: action discovery, execution, result parsing
 exorcist/server.py    FastAPI console; exorcist/static/ the UI
 ```
 

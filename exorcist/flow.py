@@ -157,7 +157,11 @@ class ExorcismFlow(Flow[RunState]):
             async with sem:
                 self.bus.emit("investigating", incident_id=t.id, title=t.title)
                 try:
-                    crew = investigation_crew(cands[t.id], t, self.robot, observer)
+                    others = [
+                        f"{o.id} [{cands[o.id].system}] {o.title}: {cands[o.id].count}x between {cands[o.id].first_ts[11:19]} and {cands[o.id].last_ts[11:19]}"
+                        for o in tri if o.id != t.id and o.id in cands
+                    ]
+                    crew = investigation_crew(cands[t.id], t, self.robot, observer, others)
                     out = await asyncio.to_thread(crew.kickoff)
                     ev: EvidenceList | None = None
                     diag: Diagnosis | None = None
@@ -239,12 +243,15 @@ class ExorcismFlow(Flow[RunState]):
             a.status = "approved"
         self.bus.emit("actions", actions=[a.model_dump() for a in verdict.actions])
         results: dict[str, dict] = {}
+
+        def on_action(kind: str, payload: dict):
+            # the tool's own result is the record of truth
+            self.bus.emit(kind, **payload)
+            if kind == "action_result" and payload["kind"] not in results:
+                results[payload["kind"]] = {"ok": payload["ok"], "url": payload.get("url"), "note": payload.get("note", ""), "via": "field_tech_agent"}
+
         try:
-            out = field_crew(approved).kickoff()
-            p = out.tasks_output[-1].pydantic if out.tasks_output else None
-            if isinstance(p, ActionResults):
-                for r in p.results:
-                    results[r.kind] = {"ok": r.ok, "url": r.url, "note": r.note, "via": "field_tech_agent"}
+            field_crew(approved, on_action).kickoff()
         except Exception as e:
             self.bus.emit("field_agent_failed", error=f"{type(e).__name__}: {e}")
         # fallback: deterministic executor through the same One MCP tools

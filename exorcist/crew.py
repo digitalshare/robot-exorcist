@@ -11,7 +11,7 @@ from pydantic import BaseModel
 
 from .config import PARASAIL_BASE_URL, settings
 from .schemas import Action, Diagnosis, EvidenceList, TriagedIncident, IncidentCandidate
-from .tools import make_tools
+from .tools import make_tools, make_action_tools
 
 Observer = Callable[[str, dict], None]
 
@@ -29,7 +29,7 @@ def parasail_llm(temperature: float = 0.2, max_tokens: int = 3000) -> LLM:
 # ---------------------------------------------------------------- investigation crew
 
 
-def investigation_crew(cand: IncidentCandidate, tri: TriagedIncident, robot: dict, observer: Observer | None = None) -> Crew:
+def investigation_crew(cand: IncidentCandidate, tri: TriagedIncident, robot: dict, observer: Observer | None = None, others: list[str] | None = None) -> Crew:
     tools = make_tools(cand.id, observer)
     llm = parasail_llm()
 
@@ -61,13 +61,14 @@ def investigation_crew(cand: IncidentCandidate, tri: TriagedIncident, robot: dic
 
     robot_ctx = json.dumps(robot, indent=1)[:2500]
     samples = "\n".join(cand.samples)
+    others_ctx = ("\nOther incidents in the same cell (for timing context; do not investigate them):\n" + "\n".join("  - " + o for o in others)) if others else ""
     research_task = Task(
         description=(
             f"Incident {cand.id}: {tri.title}\n"
             f"Subsystem: {tri.subsystem}. Severity (triage): {tri.severity}. Suspected codes: {', '.join(tri.suspected_codes) or 'none'}.\n"
             f"Occurrences: {cand.count} between {cand.first_ts} and {cand.last_ts}. Sources: {', '.join(cand.sources)}.\n"
             f"Representative log lines:\n{samples}\n\n"
-            f"Robot cell context:\n{robot_ctx}\n\n"
+            f"Robot cell context:\n{robot_ctx}\n{others_ctx}\n\n"
             f"Suggested queries (improve them if you can): {tri.search_queries}\n\n"
             "Use you_search for 2-3 queries, then you_read the 2-3 most authoritative results (vendor docs first, then GitHub issues, then forums). "
             "Collect 3-6 pieces of evidence. Each quote must be verbatim text from a page you read, at most 60 words."
@@ -78,7 +79,8 @@ def investigation_crew(cand: IncidentCandidate, tri: TriagedIncident, robot: dic
     )
     diagnose_task = Task(
         description=(
-            f"Diagnose incident {cand.id} ({tri.title}) using the log lines above and ONLY the evidence gathered by the researcher.\n"
+            f"Diagnose incident {cand.id} ({tri.title}) using the log lines, the robot cell context and ONLY the evidence gathered by the researcher.\n"
+            f"Representative log lines:\n{samples}\n{others_ctx}\n"
             "Rank the likely causes (most likely first) with a confidence in [0,1]; for each cause list the evidence URLs that support it. "
             "Consider the electrical and timing context from the robot cell description (e.g. shared power, other systems failing at the same second). "
             "Set verdict: 'exorcise' if the team must act now, 'watch' if it should be monitored, 'benign' if this is a known harmless message. "
@@ -125,26 +127,27 @@ def one_mcp() -> MCPServerStdio:
     return MCPServerStdio(command="npx", args=["-y", "@withone/mcp"], env=env, cache_tools_list=True)
 
 
-def field_crew(actions: list[Action]) -> Crew:
+def field_crew(actions: list[Action], observer: Callable[[str, dict], None] | None = None) -> Crew:
+    """The Field Tech executes approved actions. Its tools call One's MCP server (find_one_actions -> execute_one_action)
+    and return One's real response, which the flow records through `observer` (so a reported URL is never invented)."""
+    tools = make_action_tools(observer)
     tech = Agent(
         role="Field Technician (actions)",
-        goal="Carry out the approved containment actions in the team's real tools through One: post the Slack alert and open the GitHub issue, then report the resulting URLs.",
-        backstory="You operate the lab's Slack and GitHub via One. You first list integrations to get connection keys, find the right action, execute it, and never invent a result.",
+        goal="Carry out the approved containment actions in the team's real tools: post the Slack alert and open the GitHub issue, then report exactly what the tools returned.",
+        backstory="You operate the lab's Slack and GitHub through One. You post the approved text verbatim and never claim a result the tool did not return.",
         llm=parasail_llm(temperature=0.0, max_tokens=2500),
-        mcps=[one_mcp()],
-        max_iter=12,
+        tools=tools,
+        max_iter=6,
         verbose=False,
         allow_delegation=False,
     )
     payload = [a.model_dump(include={"kind", "title", "body"}) for a in actions]
+    wanted = ", ".join(a.kind for a in actions)
     task = Task(
         description=(
-            "Execute each of these approved actions using the One tools (list_one_integrations -> find_one_actions -> execute_one_action).\n"
-            f"Slack channel: {settings.slack_channel}\nGitHub repository: {settings.github_repo}\n"
-            f"Actions (JSON):\n{json.dumps(payload, indent=1)}\n\n"
-            "For slack_alert: post `body` as a message to the channel (chat.postMessage; use the channel name or id). "
-            "For github_issue: create an issue with `title` and `body` in the repository (owner/repo). "
-            "Report for every action whether it succeeded and the URL (issue html_url, or the Slack permalink / channel+ts)."
+            f"Approved actions to carry out now ({wanted}):\n{json.dumps(payload, indent=1, ensure_ascii=False)}\n\n"
+            "For a slack_alert call post_slack_alert with the body verbatim. For a github_issue call open_github_issue with the title and body verbatim. "
+            "Call each tool exactly once per approved action. Then report one entry per action with ok, url and note copied from the tool's JSON result."
         ),
         expected_output="JSON matching ActionResults: one entry per action with kind, ok, url, note.",
         agent=tech,

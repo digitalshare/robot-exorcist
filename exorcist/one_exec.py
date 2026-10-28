@@ -135,6 +135,11 @@ def _embedded_json(res: Any) -> Any:
 
 def _looks_ok(res: Any) -> bool:
     obj = _embedded_json(res)
+    if isinstance(obj, dict) and isinstance(obj.get("responseData"), dict):
+        status = obj.get("status")
+        if isinstance(status, int) and status >= 400:
+            return False
+        obj = obj["responseData"]
     if isinstance(obj, dict):
         if obj.get("ok") is False:
             return False
@@ -180,4 +185,12 @@ def _extract_url(res: Any, platform: str) -> str | None:
 
 
 def run(coro):
-    return asyncio.run(coro)
+    """Run a coroutine from sync code, even from a thread that already has a running loop (CrewAI tools)."""
+    try:
+        asyncio.get_running_loop()
+    except RuntimeError:
+        return asyncio.run(coro)
+    import concurrent.futures
+
+    with concurrent.futures.ThreadPoolExecutor(max_workers=1) as ex:
+        return ex.submit(asyncio.run, coro).result()
