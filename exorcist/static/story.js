@@ -156,7 +156,7 @@ export function createStory(container) {
   const lampMat = new THREE.MeshStandardMaterial({ color: C.accent, emissive: C.accent, emissiveIntensity: 1.2 });
   const lamp = sph(0.07, lampMat); lamp.position.set(0.25, 0.55, 0.2); psu.add(lamp);
   const psuAnchor = new THREE.Object3D(); psuAnchor.position.y = 0.85; psu.add(psuAnchor);
-  const ghostPSU = makeGhost(); ghostPSU.position.set(0, 1.0, 0); psu.add(ghostPSU);
+  const ghostPSU = makeGhost(); ghostPSU.position.set(0.55, 0.9, 0.3); psu.add(ghostPSU);
 
   const rigs = {}; // system id -> {rig, state, label, cable, ghost}
   const labels = []; // {el, anchor}
@@ -325,7 +325,7 @@ export function createStory(container) {
     for (let i = timers.length - 1; i >= 0; i--) if (now >= timers[i].until) { timers[i].undo(); timers.splice(i, 1); }
     const t = now / 1000;
     for (const id in rigs) rigs[id].rig.idle(t, rigs[id].state);
-    ghostPSU.position.y = 1.0 + Math.sin(t * 2) * 0.06;
+    ghostPSU.position.y = 0.9 + Math.sin(t * 2) * 0.06;
     for (const id in rigs) { const g = rigs[id].ghost; g.position.y = 1.3 + Math.sin(t * 2 + id.length) * 0.06; g.rotation.y = t; }
     controls.update();
     renderer.render(scene, camera);
