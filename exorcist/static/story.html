@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Robot Exorcist story</title>
+<link rel="stylesheet" href="/static/style.css">
+<style>body{height:100vh;display:flex;flex-direction:column}#story{flex:1;min-height:0}.story-top{display:flex;justify-content:space-between;align-items:center;padding:8px 16px;border-bottom:1px solid var(--line)}</style>
+</head>
+<body>
+<div class="story-top"><div class="brand"><span class="sigil">⛧</span> Robot Exorcist <span class="sub">3D story</span></div><div class="controls"><select id="scenario"></select><a class="muted" href="/" style="font-size:12px">open the console for the live chapters →</a></div></div>
+<div id="story"></div>
+<script type="module">
+import { createStory } from "/static/story.js";
+const params = new URLSearchParams(location.search);
+const sel = document.getElementById("scenario");
+const story = createStory(document.getElementById("story"));
+async function load(path) {
+  const data = await (await fetch(`/api/scenario?path=${encodeURIComponent(path)}`)).json();
+  story.load(data); story.play();
+}
+const sc = await (await fetch("/api/scenarios")).json();
+sel.innerHTML = sc.map((s) => `<option value="${s.path}">${s.name}</option>`).join("");
+const start = params.get("scenario") || (sc[0] && sc[0].path);
+if (start) { sel.value = start; load(start); }
+sel.onchange = () => { history.replaceState(null, "", `?scenario=${encodeURIComponent(sel.value)}`); load(sel.value); };
+</script>
+</body>
+</html>

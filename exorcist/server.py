@@ -12,6 +12,7 @@ from pydantic import BaseModel
 
 from .config import ROOT, settings
 from .flow import EventBus, ExorcismFlow, run_flow
+from .logs import load_scenario
 
 STATIC = Path(__file__).parent / "static"
 app = FastAPI(title="Robot Exorcist")
@@ -53,6 +54,22 @@ class ApproveBody(BaseModel):
 @app.get("/")
 def index():
     return FileResponse(STATIC / "index.html")
+
+
+@app.get("/story")
+def story_page():
+    return FileResponse(STATIC / "story.html")
+
+
+@app.get("/api/scenario")
+def scenario(path: str = "samples/haunted_cell"):
+    """robot.yaml (including its story block) plus parsed, time-sorted log events, for the 3D story."""
+    base = (ROOT / "samples").resolve()
+    target = (ROOT / path).resolve()
+    if base not in target.parents or not target.is_dir():
+        return JSONResponse({"error": "unknown scenario"}, status_code=404)
+    robot, events = load_scenario(target)
+    return {"path": path, "robot": robot, "events": [e.to_dict() for e in events]}
 
 
 @app.get("/api/scenarios")

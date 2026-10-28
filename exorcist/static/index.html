@@ -12,6 +12,7 @@
   <div class="controls">
     <select id="scenario"></select>
     <label class="chk"><input type="checkbox" id="auto"> auto-approve</label>
+    <button id="story-btn" class="ghost">3D story</button>
     <button id="start">Begin the séance</button>
     <span id="status" class="status idle">idle</span>
   </div>
@@ -52,6 +53,11 @@
     <div id="actions"></div>
   </section>
 </main>
+
+<div id="story-overlay" hidden>
+  <div class="story-head"><span>3D story · <em id="story-scn"></em></span><button id="story-close" class="ghost">Close ✕</button></div>
+  <div id="story-mount"></div>
+</div>
 
 <footer>
   <span>Grounding: <b>You.com</b> Search + Contents</span>

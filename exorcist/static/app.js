@@ -17,8 +17,37 @@ function renderPipeline(status) {
   });
 }
 
+// ---- 3D story overlay (module loaded on demand) ----
+let story = null;
+const STORY_EVENTS = new Set(["diagnosis", "verdict", "actions"]);
+function storyEvent(ev) {
+  // the story only needs to know which system a diagnosis belongs to
+  if (ev.type === "diagnosis") { const c = state.candidates[ev.incident_id]; return { ...ev, system: c ? c.system : null }; }
+  return ev;
+}
+async function openStory() {
+  const overlay = $("#story-overlay"), mount = $("#story-mount");
+  overlay.hidden = false;
+  const scenario = state.scenario || $("#scenario").value;
+  $("#story-scn").textContent = scenario.replace("samples/", "").replace("_", " ");
+  const { createStory } = await import("/static/story.js");
+  if (story) story.dispose();
+  story = createStory(mount);
+  const data = await (await fetch(`/api/scenario?path=${encodeURIComponent(scenario)}`)).json();
+  story.load(data);
+  // chapters already reached by the current run
+  for (const id of Object.keys(state.diagnoses)) story.applyRunEvent(storyEvent({ type: "diagnosis", incident_id: id, diagnosis: state.diagnoses[id] }));
+  if (state.verdict) story.applyRunEvent({ type: "verdict", verdict: state.verdict });
+  if (state.actions && state.actions.length) story.applyRunEvent({ type: "actions", actions: state.actions });
+  story.play();
+}
+function closeStory() { $("#story-overlay").hidden = true; if (story) { story.dispose(); story = null; } }
+
 async function init() {
   initPipeline();
+  $("#story-btn").onclick = openStory;
+  $("#story-close").onclick = closeStory;
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape") closeStory(); });
   const sc = await (await fetch("/api/scenarios")).json();
   $("#scenario").innerHTML = sc.map((s) => `<option value="${esc(s.path)}">${esc(s.name)}</option>`).join("");
   const cfg = await (await fetch("/api/config")).json();
@@ -33,7 +62,8 @@ async function init() {
 
 async function startRun() {
   resetUI();
-  const r = await fetch("/api/run", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ scenario: $("#scenario").value, auto: $("#auto").checked }) });
+  state.scenario = $("#scenario").value;
+  const r = await fetch("/api/run", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ scenario: state.scenario, auto: $("#auto").checked }) });
   if (!r.ok) { const e = await r.json(); alert(e.error || "failed"); return; }
   $("#start").disabled = true;
   connect();
@@ -61,6 +91,8 @@ function setStatus(s) {
 }
 
 function handle(ev) {
+  if (ev.type === "robot") state.scenario = state.scenario || $("#scenario").value;
+  if (story && STORY_EVENTS.has(ev.type)) story.applyRunEvent(storyEvent(ev));
   switch (ev.type) {
     case "reset": resetUI(); connect(); break;
     case "status": setStatus(ev.status); break;

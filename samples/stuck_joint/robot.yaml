@@ -6,3 +6,33 @@ systems:
     kind: "Universal Robots UR5e arm"
     controller: "CB5 / PolyScope 5.15, ur_robot_driver (ROS 2 Jazzy), MoveIt 2"
     log: ur5e.log
+
+story:
+  title: "The arm that will not move"
+  intro: "A teaching bench with one arm and a camera bolted to its wrist. It has clean, dedicated power."
+  cues:
+    - match: "Planning request received"
+      system: ur5e
+      effect: plan
+      caption: "Someone asks the arm to move. First the planner checks the pose it is in right now."
+      once: true
+    - match: "Found a contact between"
+      system: ur5e
+      effect: collide
+      caption: "The planner believes the wrist is already touching the camera mount. To a human the arm looks fine; to the planner it is in a crash."
+      once: true
+    - match: "START_STATE_IN_COLLISION"
+      system: ur5e
+      effect: refuse
+      caption: "So it refuses every request. Not a broken motor: a disagreement about the shape of the robot."
+      once: true
+    - match: "exceeds URDF limit"
+      system: ur5e
+      effect: overrange
+      caption: "The wrist also reports an angle past what its own description allows: {value} rad. The description, not the wrist, is wrong."
+      once: true
+  chapters:
+    investigation: "One investigation crew reads the MoveIt and ROS documentation the planner's error points to."
+    verdict_shared: "One cause after all: an outdated robot description. Fix the files, not the hardware."
+    verdict_separate: "Two separate configuration faults, no hardware damage."
+    actions: "The fix checklist goes to GitHub and the team hears about it on Slack, through One."

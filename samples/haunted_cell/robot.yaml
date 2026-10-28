@@ -14,3 +14,72 @@ systems:
     kind: "TurtleBot4 Standard (Create 3 base, RPLIDAR A1) running Nav2"
     controller: "ROS 2 Jazzy, nav2_bringup, charging on dock 2"
     log: amr_nav2.log
+
+story:
+  title: "Three ghosts that are really one"
+  intro: "A robot cell at 2 a.m. An arm, a gripper and a delivery rover share one bench power supply with a space heater and a 3D printer farm."
+  cues:
+    - match: "Safety status: NORMAL -> REDUCED"
+      system: ur5e
+      effect: warn
+      caption: "02:01: the arm slows itself down. Something feels wrong to its safety system."
+      once: true
+    - match: "Protective Stop: Position deviates from path"
+      system: ur5e
+      effect: freeze
+      caption: "The arm stops itself mid-move: a protective stop. Its wrist was not where the controller expected. Alone, this looks like a bad trajectory."
+      once: true
+    - match: "connection to robot lost"
+      system: ur5e
+      effect: disconnect
+      caption: "The computer driving the arm loses contact with it for a moment."
+      once: true
+    - match: "present input voltage"
+      system: gripper
+      effect: voltage
+      caption: "The gripper's supply sags to {value} V (it wants 12). Alone, this looks like a tired servo."
+      once: true
+    - match: "Hardware Error Status"
+      system: gripper
+      effect: tremble
+      caption: "The gripper's servo trips on low voltage and overload, and switches its motor off."
+      once: true
+    - match: "Battery pack voltage dropped"
+      system: amr
+      effect: voltage
+      caption: "The rover is on its charger, yet its battery reads {value} V and the charger input is low too."
+      once: true
+    - match: "Timeout waiting for scan data"
+      system: amr
+      effect: stop_spin
+      caption: "The rover's spinning laser eye goes silent. Alone, this looks like a dying sensor or a loose USB cable."
+      once: true
+    - match: "Navigation failed"
+      system: amr
+      effect: halt
+      caption: "Without its laser the rover cannot see, so it stops."
+      once: true
+    - match: "Protective Stop: Position deviates from path"
+      system: ur5e
+      effect: flicker
+      caption: "02:03, 02:07, 02:10, 02:16: the same three failures again, each within a second of each other. Watch the power supply."
+      after: 1
+    - match: "TF_REPEATED_DATA"
+      system: ur5e
+      effect: benign
+      caption: "A chatty warning between the bursts. Harmless, and the swarm will say so."
+      once: true
+    - match: "Robot mode is now RUNNING"
+      system: ur5e
+      effect: recover
+    - match: "Torque enabled"
+      system: gripper
+      effect: recover
+    - match: "scan resumed"
+      system: amr
+      effect: recover
+  chapters:
+    investigation: "Each incident gets its own investigation crew: one agent searches manuals and forums through You.com, the other reasons to a cited diagnosis."
+    verdict_shared: "One ghost, not three. The bench supply browns out whenever the heater and printers draw together, and every robot on it stumbles at once."
+    verdict_separate: "Different ghosts: the swarm found separate causes for these faults."
+    actions: "The exorcism leaves the screen: the alert goes to Slack and the fix checklist becomes a GitHub issue, through One."
