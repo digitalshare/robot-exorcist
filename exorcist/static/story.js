@@ -155,7 +155,7 @@ export function createStory(container) {
   for (let i = 0; i < 3; i++) { const slot = box(0.4, 0.03, 0.01, mat(0x5b6480)); slot.position.set(0, 0.17 + i * 0.08, 0.325); psu.add(slot); }
   const lampMat = new THREE.MeshStandardMaterial({ color: C.accent, emissive: C.accent, emissiveIntensity: 1.2 });
   const lamp = sph(0.07, lampMat); lamp.position.set(0.25, 0.55, 0.2); psu.add(lamp);
-  const psuAnchor = new THREE.Object3D(); psuAnchor.position.y = 0.85; psu.add(psuAnchor);
+  const psuAnchor = new THREE.Object3D(); psuAnchor.position.set(-0.25, 0.75, 0); psu.add(psuAnchor);
   const ghostPSU = makeGhost(); ghostPSU.position.set(0.55, 0.9, 0.3); psu.add(ghostPSU);
 
   const rigs = {}; // system id -> {rig, state, label, cable, ghost}
