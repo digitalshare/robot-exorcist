@@ -38,6 +38,12 @@ samples/*.log ─► parse ─► cluster (Parasail embeddings, cosine agglomera
 
 Nothing in the output is scripted: swap in different logs (`samples/stuck_joint`) and the swarm tells a different story.
 
+## 3D story mode (for people who do not speak robot)
+
+Press **3D story** in the console, or open `http://127.0.0.1:8700/story?scenario=samples/haunted_cell`. A stylized model of the cell is built from `robot.yaml` (arm, gripper, rover, the shared power supply and its cables) and the scenario's log is replayed on a scrubber with plain-language captions: the arm freezes on a protective stop, the gripper's voltage sags and its motor trips, the rover's laser goes silent, the power supply flickers on every burst. When a run is in progress or finished, the story adds the swarm's chapters: a callout above each robot with its cited diagnosis, glowing cables and a ghost on the power supply when the verdict names one shared cause (or one ghost per robot when it does not), and chips with the Slack and GitHub links once the actions are done.
+
+The scene code is generic. Each scenario carries its own narrative in a `story` block in `robot.yaml`: `cues` match log lines (`match` substring or `/regex/`, optional `system`) to an `effect` (`freeze`, `tremble`, `voltage`, `stop_spin`, `halt`, `flicker`, `collide`, `overrange`, `recover`, …) and a caption (`{value}` is replaced by the number in the line), plus `chapters` for the investigation, verdict and actions. A test checks that every cue matches at least one real log line, so captions cannot drift from the fixtures. Three.js is vendored under `exorcist/static/vendor`, so story mode works offline.
+
 ## Why each partner is load-bearing
 
 | Partner | What it does here | Remove it and… |
@@ -96,7 +102,7 @@ exorcist/tools.py     CrewAI tools: you_search / you_read (You.com), post_slack_
 exorcist/crew.py      investigation crew, field tech crew, citation enforcement
 exorcist/flow.py      CrewAI Flow + event bus
 exorcist/one_exec.py  One MCP client: action discovery, execution, result parsing
-exorcist/server.py    FastAPI console; exorcist/static/ the UI
+exorcist/server.py    FastAPI console; exorcist/static/ the UI (app.js console, story.js 3D story, icons.js)
 ```
 
 ## Limits
