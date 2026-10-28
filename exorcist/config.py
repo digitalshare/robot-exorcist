@@ -32,7 +32,7 @@ class Settings:
     slack_channel: str = field(default_factory=lambda: _env("SLACK_CHANNEL", "#loft-incident"))
     github_repo: str = field(default_factory=lambda: _env("GITHUB_REPO"))
     concurrency: int = field(default_factory=lambda: int(_env("EXORCIST_CONCURRENCY", "2")))
-    port: int = field(default_factory=lambda: int(_env("EXORCIST_PORT", "8000")))
+    port: int = field(default_factory=lambda: int(_env("EXORCIST_PORT", "8700")))
     cache_dir: Path = field(default_factory=lambda: ROOT / ".cache")
 
     def missing(self) -> list[str]:

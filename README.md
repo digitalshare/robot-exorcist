@@ -45,7 +45,7 @@ Requirements: [uv](https://docs.astral.sh/uv/), Node.js (for `npx @withone/mcp`)
 
 ```bash
 cp .env.example .env     # fill in YDC_API_KEY, PARASAIL_API_KEY, ONE_SECRET, GITHUB_REPO, SLACK_CHANNEL
-./demo.sh                # installs, starts the console on http://127.0.0.1:8000 and opens it
+./demo.sh                # installs, starts the console on http://127.0.0.1:8700 and opens it
 ```
 
 Then pick a scenario, press **Begin the séance**, watch the panels fill, and approve the actions.

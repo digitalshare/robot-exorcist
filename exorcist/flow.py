@@ -73,13 +73,14 @@ CORRELATE_SYSTEM = (
 class ExorcismFlow(Flow[RunState]):
     """CrewAI Flow. State is a RunState (pydantic)."""
 
-    def __init__(self, scenario: str, bus: EventBus, auto: bool = False, max_incidents: int = 5, skip_actions: bool = False):
+    def __init__(self, scenario: str, bus: EventBus, auto: bool = False, max_incidents: int = 5, skip_actions: bool = False, replay_delay: float = 0.0):
         super().__init__()
         self.scenario = scenario
         self.bus = bus
         self.auto = auto
         self.max_incidents = max_incidents
         self.skip_actions = skip_actions
+        self.replay_delay = replay_delay
         self.robot: dict = {}
         self.events: list[LogEvent] = []
         self.approval = threading.Event()
@@ -106,6 +107,8 @@ class ExorcismFlow(Flow[RunState]):
         self.bus.emit("robot", robot=self.robot)
         for e in self.events:
             self.bus.emit("log", event=e.to_dict())
+            if self.replay_delay:
+                time.sleep(self.replay_delay)
         return len(self.events)
 
     @listen(ingest)

@@ -27,7 +27,7 @@ class Run:
         self.thread = threading.Thread(target=self._go, daemon=True)
 
     def _go(self):
-        self.flow = ExorcismFlow(self.scenario, self.bus, auto=self.auto)
+        self.flow = ExorcismFlow(self.scenario, self.bus, auto=self.auto, replay_delay=0.02)
         try:
             self.flow.kickoff()
         except Exception as e:

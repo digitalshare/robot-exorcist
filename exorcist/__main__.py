@@ -120,6 +120,10 @@ def cmd_serve(args) -> int:
 
 
 def main(argv: list[str] | None = None) -> int:
+    try:
+        sys.stdout.reconfigure(line_buffering=True)  # progress shows up live even when piped to a file
+    except Exception:
+        pass
     p = argparse.ArgumentParser(prog="exorcist", description="Robot Exorcist: a CrewAI swarm that diagnoses a possessed robot.")
     sub = p.add_subparsers(dest="cmd")
     sub.add_parser("smoke", help="one real call per partner").set_defaults(fn=cmd_smoke)
