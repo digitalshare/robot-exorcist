@@ -36,10 +36,11 @@ async function openStory(opts = {}) {
   const data = await (await fetch(`/api/scenario?path=${encodeURIComponent(scenario)}`)).json();
   story.load(data);
   if (opts.skipReplay) story.seek(1);
-  // chapters already reached by the current run
-  for (const id of Object.keys(state.diagnoses)) story.applyRunEvent(storyEvent({ type: "diagnosis", incident_id: id, diagnosis: state.diagnoses[id] }));
-  if (state.verdict) story.applyRunEvent({ type: "verdict", verdict: state.verdict });
-  if (state.actions && state.actions.length) story.applyRunEvent({ type: "actions", actions: state.actions });
+  // chapters already reached by the current run (only if that run is this scenario)
+  const sameRun = state.scenario === scenario && state.status !== "idle";
+  if (sameRun) for (const id of Object.keys(state.diagnoses)) story.applyRunEvent(storyEvent({ type: "diagnosis", incident_id: id, diagnosis: state.diagnoses[id] }));
+  if (sameRun && state.verdict) story.applyRunEvent({ type: "verdict", verdict: state.verdict });
+  if (sameRun && state.actions && state.actions.length) story.applyRunEvent({ type: "actions", actions: state.actions });
   if (!opts.skipReplay) story.play();
 }
 function closeStory() { $("#story-overlay").hidden = true; if (story) { story.dispose(); story = null; } }
@@ -325,6 +326,7 @@ const autopilot = { stage: "off" };
 function startAutopilot() {
   if (!["idle", "done", "error"].includes(state.status)) return;
   autopilot.stage = "intro"; $("#auto-btn").classList.add("on");
+  resetUI(); state.scenario = $("#scenario").value; state.status = "idle";
   openStory();
 }
 function stopAutopilot() { autopilot.stage = "off"; $("#auto-btn").classList.remove("on"); }
