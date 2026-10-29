@@ -93,10 +93,11 @@ async function startRun() {
 }
 
 function connect() {
-  if (ws) { try { ws.close(); } catch {} }
-  ws = new WebSocket(`${location.protocol === "https:" ? "wss" : "ws"}://${location.host}/ws`);
-  ws.onmessage = (m) => handle(JSON.parse(m.data));
-  ws.onclose = () => { if (!["done", "error"].includes(state.status)) setTimeout(connect, 800); };
+  if (ws) { ws.onclose = null; ws.onmessage = null; try { ws.close(); } catch {} } // a socket we close on purpose must not reconnect itself
+  const sock = new WebSocket(`${location.protocol === "https:" ? "wss" : "ws"}://${location.host}/ws`);
+  ws = sock;
+  sock.onmessage = (m) => handle(JSON.parse(m.data));
+  sock.onclose = () => { if (ws === sock && !["done", "error"].includes(state.status)) setTimeout(connect, 800); };
 }
 
 function resetUI() {
@@ -226,7 +227,7 @@ function renderIncidents() {
 function select(id) { state.selected = id; renderIncidents(); renderInvestigation(); }
 function step(id, s) {
   const arr = (state.steps[id] ||= []);
-  const key = s.kind === "search" ? "q:" + s.query : s.kind === "read" ? "u:" + s.url : null;
+  const key = s.kind === "search" ? "q:" + s.query : s.kind === "read" ? "u:" + s.url : s.kind === "start" ? "start" : null;
   const dup = key && arr.find((x) => x.key === key);
   if (dup) { dup.n = (dup.n || 1) + 1; } else { arr.push(Object.assign(s, { key })); } if (state.selected === id || !state.selected) { state.selected = id; renderInvestigation(); renderIncidents(); } }
 
