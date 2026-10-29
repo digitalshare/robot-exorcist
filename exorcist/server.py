@@ -134,11 +134,15 @@ async def ws(sock: WebSocket):
         for ev in list(run.bus.events):
             await sock.send_json(ev)
         while True:
-            ev = await q.get()
-            await sock.send_json(ev)
-            if run is not current:  # a new run started: client should reconnect
+            try:
+                ev = await asyncio.wait_for(q.get(), timeout=1.0)
+            except asyncio.TimeoutError:
+                ev = None
+            if run is not current:  # a new run started: client should reconnect and replay it
                 await sock.send_json({"type": "reset"})
                 break
+            if ev is not None:
+                await sock.send_json(ev)
     except WebSocketDisconnect:
         pass
     finally:
