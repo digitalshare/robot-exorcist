@@ -19,6 +19,11 @@ function mat(color, extra = {}) { return new THREE.MeshStandardMaterial({ color,
 function box(w, h, d, m) { return new THREE.Mesh(new THREE.BoxGeometry(w, h, d), m); }
 function cyl(rt, rb, h, m, seg = 24) { return new THREE.Mesh(new THREE.CylinderGeometry(rt, rb, h, seg), m); }
 function sph(r, m) { return new THREE.Mesh(new THREE.SphereGeometry(r, 20, 16), m); }
+const tweens = [];
+const easeOut = (k) => 1 - (1 - k) * (1 - k);
+function tween(sec, fn, done, ease = easeOut) { tweens.push({ start: performance.now(), dur: sec * 1000, fn, done, ease }); }
+const snd = () => (typeof window !== "undefined" ? window.exorcistSound : null);
+function setOpacity(obj, o) { obj.traverse((m) => { if (m.material && m.material.transparent) m.material.opacity = o; }); }
 function tsSeconds(ts) { const d = new Date(String(ts).replace(" ", "T") + (String(ts).endsWith("Z") ? "" : "Z")); return isNaN(d) ? null : d.getTime() / 1000; }
 
 // ------------------------------------------------------------------ rigs
@@ -158,7 +163,10 @@ export function createStory(container) {
   const psuAnchor = new THREE.Object3D(); psuAnchor.position.set(-0.25, 0.75, 0); psu.add(psuAnchor);
   const ghostPSU = makeGhost(); ghostPSU.position.set(0.55, 0.9, 0.3); psu.add(ghostPSU);
 
-  const rigs = {}; // system id -> {rig, state, label, cable, ghost}
+  const rigs = {}; // system id -> {rig, state, label, cable, ghost, ghostY, ghostBusy}
+  const orbs = {}; // system id -> {group, violet, amber, note}
+  const piles = {}; // system id -> [cards]
+  let banished = false;
   const labels = []; // {el, anchor}
   let story = { cues: [], chapters: {} }, robot = {}, events = [], cueHits = [], tints = {};
   let shared = false;
@@ -166,10 +174,15 @@ export function createStory(container) {
   function addLabel(anchor, html, cls = "") { const el = document.createElement("div"); el.className = "story-label " + cls; el.innerHTML = html; labelsEl.appendChild(el); const L = { el, anchor }; labels.push(L); return L; }
 
   function clearScene() {
-    for (const id of Object.keys(rigs)) { scene.remove(rigs[id].rig.group); if (rigs[id].cable) scene.remove(rigs[id].cable); }
+    for (const id of Object.keys(rigs)) { scene.remove(rigs[id].rig.group); if (rigs[id].cable) scene.remove(rigs[id].cable); scene.remove(rigs[id].ghost); }
     for (const id in rigs) delete rigs[id];
+    for (const id in orbs) { scene.remove(orbs[id].group); delete orbs[id]; }
+    for (const id in piles) { piles[id].forEach((c) => scene.remove(c)); delete piles[id]; }
     labels.splice(0).forEach((l) => l.el.remove());
-    chipsEl.innerHTML = ""; ghostPSU.visible = false; shared = false; fill.intensity = 0;
+    tweens.length = 0; timers.length = 0;
+    chipsEl.innerHTML = ""; ghostPSU.visible = false; ghostPSU.scale.setScalar(1); shared = false; banished = false; fill.intensity = 0;
+    lampMat.color.setHex(C.accent); lampMat.emissive.setHex(C.accent);
+    for (const k in chapterShown) delete chapterShown[k];
   }
 
   function load(data) {
@@ -201,7 +214,7 @@ export function createStory(container) {
         cable.computeLineDistances(); scene.add(cable);
       }
       const ghost = makeGhost(); ghost.position.set(0, 1.3, 0); rig.group.add(ghost);
-      rigs[sys.id] = { rig, state, label, cable, ghost, kind };
+      rigs[sys.id] = { rig, state, label, cable, ghost, kind, ghostY: 1.3, ghostBusy: false };
       tints[sys.id] = rig.tints.map((m) => ({ m, base: m.material.color.getHex() }));
     });
     addLabel(psuAnchor, `<b>shared power</b><span>${esc(String(robot.power || "bench supply").split(".")[0].slice(0, 60))}</span><em></em>`);
@@ -244,10 +257,19 @@ export function createStory(container) {
     refuse: (id) => badge(id, "move refused", "err", 3),
     overrange: (id, value) => { const r = rigs[id]; if (!r) return; const p = r.rig.parts; if (p.j2) p.j2.material.color.setHex(C.amber); badge(id, value ? `wrist at ${value} rad` : "joint out of range", "warn", 4); },
   };
+  const HAUNTING = new Set(["freeze", "tremble", "stop_spin", "halt", "collide"]);
+  function spawnGhost(id) {
+    const r = rigs[id]; if (!r || r.state.haunted || banished) return;
+    r.state.haunted = true; const g = r.ghost;
+    g.visible = true; g.position.y = 0.3; g.scale.setScalar(0.5); r.ghostBusy = true;
+    tween(0.9, (k) => { g.position.y = 0.3 + k * 1.0; g.scale.setScalar(0.5 + 0.5 * k); }, () => { r.ghostBusy = false; r.ghostY = 1.3; });
+  }
   let holdUntil = 0; // after a visible effect the clock runs at 1x for a moment so the audience can see it
   function fire(cue, ev) {
     const target = cue.system || Object.keys(rigs)[0];
     if (!["recover", "flicker"].includes(cue.effect)) holdUntil = Math.max(holdUntil, performance.now() + 2200);
+    if (HAUNTING.has(cue.effect)) { spawnGhost(target); snd()?.thunk(); }
+    if (cue.effect === "flicker") snd()?.hum();
     const num = (ev.text.match(/(\d+(?:\.\d+)?)\s*(?:V\b|rad\b)/) || ev.text.match(/(\d+(?:\.\d+)?)/) || [])[1];
     (EFFECTS[cue.effect] || (() => {}))(target, num);
     return num;
@@ -276,15 +298,19 @@ export function createStory(container) {
       const r = rigs[ev.system]; if (!r) return;
       const d = ev.diagnosis; const cites = new Set(d.causes.flatMap((c) => c.evidence_urls)).size;
       addLabel(r.rig.anchor, `<i class="${d.verdict}">${esc(d.verdict)}</i> ${esc(d.summary).slice(0, 140)}${d.summary.length > 140 ? "…" : ""}<small>${cites} cited source${cites === 1 ? "" : "s"}</small>`, "callout");
+      dismissOrbs(ev.system); snd()?.chime();
+      if (d.verdict === "exorcise") spawnGhost(ev.system);
+      (piles[ev.system] || []).forEach((c) => { c.material.emissive.setHex(C.violet); later(1.5, () => c.material.emissive.setHex(0x000000)); });
       if (story.chapters && story.chapters.investigation && !chapterShown.investigation) { chapterShown.investigation = true; caption(story.chapters.investigation); }
     } else if (ev.type === "verdict") {
       const v = ev.verdict; shared = !!v.shared_root_cause;
+      snd()?.gong();
       if (shared) {
-        ghostPSU.visible = true; fill.intensity = 1.2;
         for (const id in rigs) { const c = rigs[id].cable; if (c) { c.material.color.setHex(C.accent); c.material.opacity = 1; } }
+        migrateGhosts();
         caption((story.chapters && story.chapters.verdict_shared) || v.headline);
       } else {
-        for (const id in rigs) rigs[id].ghost.visible = true;
+        for (const id in rigs) { const r = rigs[id]; if (!r.ghost.visible) { r.ghost.visible = true; r.state.haunted = true; } }
         caption((story.chapters && story.chapters.verdict_separate) || v.headline);
       }
       capTitle.textContent = v.headline;
@@ -292,7 +318,75 @@ export function createStory(container) {
       const done = ev.actions.filter((a) => a.status === "done");
       chipsEl.innerHTML = ev.actions.map((a) => `<span class="chip ${a.status}">${a.kind === "slack_alert" ? "Slack alert" : "GitHub issue"}: ${esc(a.status)}${a.result_url ? ` · <a href="${esc(a.result_url)}" target="_blank">open</a>` : ""}</span>`).join("");
       if (done.length && story.chapters && story.chapters.actions && !chapterShown.actions) { chapterShown.actions = true; caption(story.chapters.actions); }
+      const settled = ev.actions.every((a) => ["done", "skipped", "failed"].includes(a.status));
+      if (done.length && settled && !banished) banish();
+    } else if (ev.type === "investigating") {
+      summonOrbs(ev.system);
+    } else if (ev.type === "search" || ev.type === "read") {
+      pulseOrb(ev.system, ev.type === "search" ? `searching: ${ev.query}` : `reading: ${ev.title || ev.url}`);
+      if (ev.type === "read") addEvidenceCard(ev.system, ev.url);
     }
+  }
+
+  // every haunted robot's ghost drifts to the power supply and merges into one big ghost
+  function migrateGhosts() {
+    const target = new THREE.Vector3(); ghostPSU.getWorldPosition(target);
+    let n = 0;
+    for (const id in rigs) {
+      const r = rigs[id]; if (!r.ghost.visible) continue;
+      n++; const g = r.ghost; scene.attach(g); r.ghostBusy = true;
+      const from = g.position.clone();
+      tween(1.6 + n * 0.2, (k) => { g.position.lerpVectors(from, target, k); g.position.y += Math.sin(k * Math.PI) * 0.9; setOpacity(g, 0.85 * (1 - k * 0.8)); g.scale.setScalar(1 - 0.4 * k); }, () => { g.visible = false; setOpacity(g, 0.85); g.scale.setScalar(1); r.rig.group.attach(g); g.position.set(0, 1.3, 0); r.ghostBusy = false; });
+    }
+    ghostPSU.visible = true; ghostPSU.scale.setScalar(0.6);
+    tween(1.8, (k) => { ghostPSU.scale.setScalar(0.6 + 1.2 * k); fill.intensity = 1.2 + Math.sin(k * Math.PI) * 2.5; }, () => (fill.intensity = 1.2));
+  }
+
+  // the exorcism: a burst of light, the ghost is gone, the cell goes green and the robots move again
+  function banish() {
+    banished = true;
+    const burst = new THREE.PointLight(0xffffff, 0, 7); ghostPSU.getWorldPosition(burst.position); scene.add(burst);
+    const s0 = ghostPSU.scale.x;
+    tween(0.9, (k) => { burst.intensity = 7 * Math.sin(k * Math.PI); ghostPSU.scale.setScalar(s0 * (1 - k)); fill.intensity = 1.2 * (1 - k); }, () => { ghostPSU.visible = false; scene.remove(burst); });
+    for (const id in rigs) { const r = rigs[id]; r.ghost.visible = false; r.state.haunted = false; EFFECTS.recover(id); if (r.cable) r.cable.material.color.setHex(C.green); badge(id, "exorcised", "ok", 6); }
+    lampMat.color.setHex(C.green); lampMat.emissive.setHex(C.green);
+    snd()?.sparkle();
+    later(2.2, () => caption((story.chapters && story.chapters.exorcised) || "Exorcised. The alert is out, the ticket is filed, and the robots are back to work."));
+  }
+
+  // two investigator orbs (Researcher violet, Diagnostician amber) circle the robot under investigation
+  function summonOrbs(id) {
+    const r = rigs[id]; if (!r || orbs[id]) return;
+    const group = new THREE.Group(); scene.add(group);
+    const violet = sph(0.09, new THREE.MeshStandardMaterial({ color: C.violet, emissive: C.violet, emissiveIntensity: 1.5, transparent: true, opacity: 1 }));
+    const amber = sph(0.08, new THREE.MeshStandardMaterial({ color: C.amber, emissive: C.amber, emissiveIntensity: 1.3, transparent: true, opacity: 1 }));
+    group.add(violet, amber);
+    const noteAnchor = new THREE.Object3D(); noteAnchor.position.y = -0.1; group.add(noteAnchor);
+    const note = addLabel(noteAnchor, "", "orb-note"); note.el.style.opacity = "0";
+    orbs[id] = { group, violet, amber, note, born: performance.now() };
+    tween(0.6, (k) => group.scale.setScalar(k));
+  }
+  function pulseOrb(id, text) {
+    const o = orbs[id]; if (!o) return;
+    tween(0.45, (k) => o.violet.scale.setScalar(1 + Math.sin(k * Math.PI) * 0.8));
+    o.note.el.textContent = text.slice(0, 70); o.note.el.style.opacity = "1";
+    later(1.6, () => (o.note.el.style.opacity = "0"));
+  }
+  function dismissOrbs(id) {
+    const o = orbs[id]; if (!o) return; delete orbs[id];
+    tween(0.8, (k) => { o.group.scale.setScalar(1 - k); setOpacity(o.group, 1 - k); }, () => { scene.remove(o.group); o.note.el.remove(); });
+  }
+  // every page the researcher reads lands as a card on a pile beside the robot
+  function addEvidenceCard(id, url) {
+    const r = rigs[id]; if (!r) return;
+    const pile = (piles[id] ||= []); if (pile.length >= 12) return;
+    const card = new THREE.Mesh(new THREE.PlaneGeometry(0.3, 0.4), new THREE.MeshStandardMaterial({ color: 0xe7e9f0, roughness: 0.8, side: THREE.DoubleSide }));
+    const base = new THREE.Vector3(); r.rig.group.getWorldPosition(base);
+    const to = new THREE.Vector3(base.x + 0.95, 0.02 + pile.length * 0.035, base.z + 0.45);
+    const from = camera.position.clone().add(new THREE.Vector3(0, -0.5, -1.5));
+    card.position.copy(from); card.rotation.set(-Math.PI / 2, 0, (Math.random() - 0.5) * 0.6); scene.add(card); pile.push(card);
+    tween(0.9, (k) => { card.position.lerpVectors(from, to, k); card.position.y += Math.sin(k * Math.PI) * 0.6; });
+    if (pile.length <= 3) { try { const host = new URL(url).host.replace("www.", ""); const a = new THREE.Object3D(); a.position.set(0.95, 0.25 + pile.length * 0.12, 0.45); r.rig.group.add(a); addLabel(a, esc(host), "card-note"); } catch {} }
   }
   const chapterShown = {};
 
@@ -318,7 +412,7 @@ export function createStory(container) {
     if (playing) {
       vt += dt * (now < holdUntil ? 1 : speed);
       while (cursor < events.length && tsSeconds(events[cursor].ts) <= vt) handle(events[cursor++]);
-      if (vt >= tEnd) { vt = tEnd; playing = false; playBtn.textContent = "↺"; }
+      if (vt >= tEnd) { vt = tEnd; playing = false; playBtn.textContent = "↺"; container.dispatchEvent(new CustomEvent("story:ended", { bubbles: true })); }
       scrub.value = String(Math.round(((vt - t0) / Math.max(tEnd - t0, 1)) * 1000));
     }
     timeEl.textContent = events.length ? fmt(vt) : "--:--:--";

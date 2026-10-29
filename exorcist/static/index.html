@@ -12,6 +12,8 @@
   <div class="controls">
     <select id="scenario"></select>
     <label class="chk"><input type="checkbox" id="auto"> auto-approve</label>
+    <button id="sound-btn" class="ghost" title="sound cues">🔇</button>
+    <button id="auto-btn" class="ghost" title="presenter autopilot (P)">Autopilot</button>
     <button id="story-btn" class="ghost">3D story</button>
     <button id="start">Begin the séance</button>
     <span id="status" class="status idle">idle</span>
@@ -33,6 +35,7 @@
     <h2>Robot cell <span class="count" id="log-count"></span></h2>
     <div class="cell" id="cell"></div>
     <div class="robot" id="robot"></div>
+    <div class="bursts" id="bursts"></div>
     <div class="logs" id="logs"></div>
   </section>
 
@@ -54,6 +57,8 @@
   </section>
 </main>
 
+<div id="seance" hidden><div class="flame"></div><div class="seance-title">Robot Exorcist</div><div class="seance-sub" id="seance-sub"></div></div>
+
 <div id="story-overlay" hidden>
   <div class="story-head"><span>3D story · <em id="story-scn"></em></span><button id="story-close" class="ghost">Close ✕</button></div>
   <div id="story-mount"></div>
@@ -65,6 +70,7 @@
   <span>Actions: <b>One</b> → <code id="cfg-targets"></code></span>
   <span>Swarm: <b>CrewAI</b> Flow + crews</span>
 </footer>
+<script src="/static/sound.js"></script>
 <script src="/static/icons.js"></script>
 <script src="/static/app.js"></script>
 </body>

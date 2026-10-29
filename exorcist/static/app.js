@@ -1,6 +1,6 @@
 const $ = (s) => document.querySelector(s);
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
-const state = { candidates: {}, triage: {}, steps: {}, evidence: {}, diagnoses: {}, verdict: null, actions: [], selected: null, status: "idle", logCount: 0, robot: null };
+const state = { candidates: {}, triage: {}, steps: {}, evidence: {}, diagnoses: {}, verdict: null, actions: [], selected: null, status: "idle", logCount: 0, robot: null, events: [] };
 let ws = null;
 
 const STAGES = ["ingesting", "clustering", "triaging", "investigating", "correlating", "awaiting_approval", "acting"];
@@ -19,13 +19,13 @@ function renderPipeline(status) {
 
 // ---- 3D story overlay (module loaded on demand) ----
 let story = null;
-const STORY_EVENTS = new Set(["diagnosis", "verdict", "actions"]);
+const STORY_EVENTS = new Set(["diagnosis", "verdict", "actions", "investigating", "search", "read"]);
 function storyEvent(ev) {
-  // the story only needs to know which system a diagnosis belongs to
-  if (ev.type === "diagnosis") { const c = state.candidates[ev.incident_id]; return { ...ev, system: c ? c.system : null }; }
+  // the story only needs to know which system an incident belongs to
+  if (ev.incident_id) { const c = state.candidates[ev.incident_id]; return { ...ev, system: c ? c.system : null }; }
   return ev;
 }
-async function openStory() {
+async function openStory(opts = {}) {
   const overlay = $("#story-overlay"), mount = $("#story-mount");
   overlay.hidden = false;
   const scenario = state.scenario || $("#scenario").value;
@@ -35,19 +35,29 @@ async function openStory() {
   story = createStory(mount);
   const data = await (await fetch(`/api/scenario?path=${encodeURIComponent(scenario)}`)).json();
   story.load(data);
+  if (opts.skipReplay) story.seek(1);
   // chapters already reached by the current run
   for (const id of Object.keys(state.diagnoses)) story.applyRunEvent(storyEvent({ type: "diagnosis", incident_id: id, diagnosis: state.diagnoses[id] }));
   if (state.verdict) story.applyRunEvent({ type: "verdict", verdict: state.verdict });
   if (state.actions && state.actions.length) story.applyRunEvent({ type: "actions", actions: state.actions });
-  story.play();
+  if (!opts.skipReplay) story.play();
 }
 function closeStory() { $("#story-overlay").hidden = true; if (story) { story.dispose(); story = null; } }
 
 async function init() {
   initPipeline();
-  $("#story-btn").onclick = openStory;
+  $("#story-btn").onclick = () => openStory();
   $("#story-close").onclick = closeStory;
-  document.addEventListener("keydown", (e) => { if (e.key === "Escape") closeStory(); });
+  const snd = window.exorcistSound;
+  const soundBtn = $("#sound-btn"); soundBtn.textContent = snd && snd.enabled ? "🔊" : "🔇";
+  soundBtn.onclick = () => { soundBtn.textContent = snd.toggle() ? "🔊" : "🔇"; };
+  $("#auto-btn").onclick = () => (autopilot.stage === "off" ? startAutopilot() : stopAutopilot());
+  document.addEventListener("keydown", (e) => {
+    if (e.target.tagName === "INPUT" || e.target.tagName === "SELECT") return;
+    if (e.key === "Escape") { closeStory(); stopAutopilot(); }
+    if (e.key === "p" || e.key === "P") autopilot.stage === "off" ? startAutopilot() : stopAutopilot();
+  });
+  $("#story-mount").addEventListener("story:ended", () => { if (autopilot.stage === "intro") { closeStory(); autopilot.stage = "run"; startRun(); } });
   const sc = await (await fetch("/api/scenarios")).json();
   $("#scenario").innerHTML = sc.map((s) => `<option value="${esc(s.path)}">${esc(s.name)}</option>`).join("");
   const cfg = await (await fetch("/api/config")).json();
@@ -60,8 +70,15 @@ async function init() {
   if (st.status !== "idle") { connect(); }
 }
 
+function seance() {
+  const el = $("#seance"); $("#seance-sub").textContent = ($("#scenario").selectedOptions[0] || {}).text || "";
+  el.hidden = false; el.classList.remove("out");
+  setTimeout(() => el.classList.add("out"), 1700); setTimeout(() => (el.hidden = true), 2300);
+}
+
 async function startRun() {
   resetUI();
+  seance();
   state.scenario = $("#scenario").value;
   const r = await fetch("/api/run", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ scenario: state.scenario, auto: $("#auto").checked }) });
   if (!r.ok) { const e = await r.json(); alert(e.error || "failed"); return; }
@@ -77,7 +94,8 @@ function connect() {
 }
 
 function resetUI() {
-  Object.assign(state, { candidates: {}, triage: {}, steps: {}, evidence: {}, diagnoses: {}, verdict: null, actions: [], selected: null, status: "idle", logCount: 0 });
+  Object.assign(state, { candidates: {}, triage: {}, steps: {}, evidence: {}, diagnoses: {}, verdict: null, actions: [], selected: null, status: "idle", logCount: 0, events: [] });
+  $("#bursts").innerHTML = "";
   $("#logs").innerHTML = ""; $("#cell").innerHTML = ""; $("#incidents").innerHTML = ""; $("#investigation").innerHTML = ""; $("#verdict").innerHTML = ""; $("#actions").innerHTML = ""; $("#log-count").textContent = "";
 }
 
@@ -90,16 +108,32 @@ function setStatus(s) {
   if (state.actions && state.actions.length) renderActions(); // approval buttons depend on status
 }
 
+const recentErrors = [];
+function onLogEffects(e) {
+  if (e.level !== "ERROR") return;
+  const t = performance.now(); recentErrors.push({ t, system: e.system });
+  while (recentErrors.length && t - recentErrors[0].t > 1000) recentErrors.shift();
+  const snd = window.exorcistSound;
+  if (/Protective Stop|Hardware Error|Timeout waiting|collision/i.test(e.text)) snd && snd.thunk();
+  if (recentErrors.length >= 3) { const box = $("#logs"); box.classList.remove("glitch"); void box.offsetWidth; box.classList.add("glitch"); }
+  if (new Set(recentErrors.map((r) => r.system)).size >= 2) snd && snd.hum();
+}
+
 function handle(ev) {
   if (ev.type === "robot") state.scenario = state.scenario || $("#scenario").value;
+  if (ev.type === "log") { state.events.push(ev.event); onLogEffects(ev.event); }
+  if (ev.type === "diagnosis") window.exorcistSound && window.exorcistSound.chime();
+  if (ev.type === "verdict") { window.exorcistSound && window.exorcistSound.gong(); if (autopilot.stage === "run") { autopilot.stage = "verdict"; openStory({ skipReplay: true }); } }
+  if (ev.type === "actions" && ev.actions.some((a) => a.status === "done") && ev.actions.every((a) => ["done", "skipped", "failed"].includes(a.status))) window.exorcistSound && window.exorcistSound.sparkle();
+  if (ev.type === "status" && ["done", "error"].includes(ev.status)) stopAutopilot();
   if (story && STORY_EVENTS.has(ev.type)) story.applyRunEvent(storyEvent(ev));
   switch (ev.type) {
     case "reset": resetUI(); connect(); break;
     case "status": setStatus(ev.status); break;
     case "robot": state.robot = ev.robot; renderRobot(); break;
     case "log": appendLog(ev.event); break;
-    case "candidates": ev.candidates.forEach((c) => (state.candidates[c.id] = c)); $("#inc-hint").textContent = `${ev.candidates.length} clusters · ${ev.embed_model}`; renderIncidents(); renderCell(); break;
-    case "triage": ev.triage.forEach((t) => (state.triage[t.id] = t)); renderIncidents(); renderCell(); break;
+    case "candidates": ev.candidates.forEach((c) => (state.candidates[c.id] = c)); $("#inc-hint").textContent = `${ev.candidates.length} clusters · ${ev.embed_model}`; renderIncidents(); renderCell(); renderBursts(); break;
+    case "triage": ev.triage.forEach((t) => (state.triage[t.id] = t)); renderIncidents(); renderCell(); renderBursts(); break;
     case "investigating": step(ev.incident_id, { kind: "start", title: ev.title }); if (!state.selected) select(ev.incident_id); break;
     case "search": step(ev.incident_id, { kind: "search", query: ev.query, results: ev.results }); break;
     case "read": step(ev.incident_id, { kind: "read", url: ev.url, title: ev.title, chars: ev.chars }); break;
@@ -107,7 +141,7 @@ function handle(ev) {
     case "diagnosis": state.diagnoses[ev.incident_id] = ev.diagnosis; renderIncidents(); renderInvestigation(); renderCell(); break;
     case "investigation_failed": step(ev.incident_id, { kind: "fail", error: ev.error }); break;
     case "note": step(ev.incident_id, { kind: "note", text: ev.text }); break;
-    case "verdict": state.verdict = ev.verdict; renderVerdict(); renderCell(); break;
+    case "verdict": state.verdict = ev.verdict; renderVerdict(); renderCell(); renderBursts(); break;
     case "actions": state.actions = ev.actions; renderActions(); break;
     case "error": $("#verdict").innerHTML += `<p class="err">${esc(ev.error)}\n${esc(ev.trace || "")}</p>`; break;
     case "field_agent_failed": $("#act-hint").textContent = "field agent failed, using deterministic One executor"; break;
@@ -236,3 +270,61 @@ function renderActions() {
 }
 
 init();
+
+
+// ---- burst timeline strip: one lane per system, a tick per fault, voltage traces, synchronized bursts as bands ----
+function renderBursts() {
+  const systems = ((state.robot || {}).systems || []).map((s) => s.id);
+  const evs = state.events.filter((e) => e.ts);
+  if (!systems.length || evs.length < 2) { $("#bursts").innerHTML = ""; return; }
+  const T = (ts) => new Date(ts.replace(" ", "T") + "Z").getTime() / 1000;
+  const t0 = T(evs[0].ts), t1 = T(evs[evs.length - 1].ts) || t0 + 1, span = Math.max(t1 - t0, 1);
+  const W = 420, L = 44, laneH = 16, voltH = 14, H = systems.length * laneH + voltH + 14;
+  const X = (ts) => L + ((T(ts) - t0) / span) * (W - L - 4);
+  const rank = { WARN: 2, WARNING: 2, ERROR: 3, FATAL: 4 };
+  let h = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Fault timeline">`;
+  // investigated incident spans
+  for (const c of Object.values(state.candidates)) {
+    const t = state.triage[c.id]; if (!t || t.decision !== "investigate") continue;
+    const i = systems.indexOf(c.system); if (i < 0) continue;
+    h += `<rect class="inv" x="${X(c.first_ts)}" y="${i * laneH + 1}" width="${Math.max(X(c.last_ts) - X(c.first_ts), 2)}" height="${laneH - 2}" rx="2"/>`;
+  }
+  // synchronized bursts: linked systems faulting within 3 s of each other (same rule as the clusterer)
+  const v = state.verdict;
+  if (v && v.shared_root_cause) {
+    const linkedSys = new Set(v.linked_incident_ids.map((id) => (state.candidates[id] || {}).system).filter(Boolean));
+    const errs = evs.filter((e) => e.level === "ERROR" && linkedSys.has(e.system));
+    const seen = new Set();
+    for (const e of errs) {
+      const te = T(e.ts);
+      if (errs.some((o) => o.system !== e.system && Math.abs(T(o.ts) - te) <= 3)) { const x = Math.round(X(e.ts)); if (!seen.has(x)) { seen.add(x); h += `<rect class="band" x="${x - 1.5}" y="0" width="3" height="${systems.length * laneH}"/>`; } }
+    }
+  }
+  systems.forEach((id, i) => {
+    const y = i * laneH;
+    h += `<text x="2" y="${y + 11}">${esc(id.slice(0, 7))}</text><line class="lane" x1="${L}" y1="${y + laneH - 0.5}" x2="${W - 4}" y2="${y + laneH - 0.5}"/>`;
+    for (const e of evs) if (e.system === id && (rank[e.level] || 0) >= 2) h += `<line class="tick ${esc(e.level)}" x1="${X(e.ts)}" y1="${y + (e.level === "ERROR" ? 2 : 6)}" x2="${X(e.ts)}" y2="${y + laneH - 2}"><title>${esc(e.ts.slice(11, 19))} ${esc(e.text).slice(0, 120)}</title></line>`;
+  });
+  // voltage traces beneath the lanes, one polyline per system that reports volts
+  const vy = systems.length * laneH + 4;
+  let any = false;
+  systems.forEach((id, i) => {
+    const pts = evs.filter((e) => e.system === id).map((e) => { const m = e.text.match(/(\d+(?:\.\d+)?)\s*V\b/); return m ? [X(e.ts), parseFloat(m[1])] : null; }).filter(Boolean);
+    if (pts.length < 2) return; any = true;
+    const vals = pts.map((p) => p[1]), lo = Math.min(...vals), hi = Math.max(...vals) || lo + 1;
+    const path = pts.map(([x, val]) => `${x.toFixed(1)},${(vy + voltH - ((val - lo) / Math.max(hi - lo, 0.1)) * voltH).toFixed(1)}`).join(" ");
+    h += `<polyline class="volt" points="${path}"><title>${esc(id)} voltage ${lo}–${hi} V</title></polyline>`;
+  });
+  if (any) h += `<text x="2" y="${vy + voltH}">volts</text>`;
+  h += `<text x="${L}" y="${H - 2}">${esc(evs[0].ts.slice(11, 16))}</text><text x="${W - 4}" y="${H - 2}" text-anchor="end">${esc(evs[evs.length - 1].ts.slice(11, 16))}</text></svg>`;
+  $("#bursts").innerHTML = h;
+}
+
+// ---- presenter autopilot: story (problem) -> run the swarm -> story again at the verdict -> stop for a human to approve ----
+const autopilot = { stage: "off" };
+function startAutopilot() {
+  if (!["idle", "done", "error"].includes(state.status)) return;
+  autopilot.stage = "intro"; $("#auto-btn").classList.add("on");
+  openStory();
+}
+function stopAutopilot() { autopilot.stage = "off"; $("#auto-btn").classList.remove("on"); }

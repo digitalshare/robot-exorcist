@@ -92,3 +92,20 @@ footer{display:flex;gap:24px;padding:8px 18px;border-top:1px solid var(--line);c
 .story-chips{position:absolute;right:18px;top:12px;display:flex;flex-direction:column;gap:6px}.chip{font-size:12px;background:var(--panel2);border:1px solid var(--line);border-radius:999px;padding:4px 10px}.chip.done{border-color:var(--ok)}.chip.failed{border-color:var(--err)}.chip a{color:#9fc1ff}
 .story-bar{display:flex;gap:10px;align-items:center;padding:8px 14px;border-top:1px solid var(--line);background:var(--panel);font-size:12px}
 .story-bar .s-play{min-width:38px}.story-bar .s-scrub{flex:1;accent-color:var(--accent)}.story-bar .s-time{font-family:var(--mono);color:var(--muted)}.story-bar .s-ticker{font-family:var(--mono);color:var(--muted);font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:45%}
+
+/* effects */
+#seance{position:fixed;inset:0;z-index:60;background:radial-gradient(ellipse at 50% 70%,rgba(60,30,10,.55),rgba(5,6,10,.97) 60%);display:flex;flex-direction:column;align-items:center;justify-content:center;animation:seancein .4s ease}
+#seance[hidden]{display:none}#seance.out{animation:seanceout .6s ease forwards}
+@keyframes seancein{from{opacity:0}to{opacity:1}}@keyframes seanceout{to{opacity:0}}
+.flame{width:26px;height:60px;border-radius:50% 50% 50% 50%/60% 60% 40% 40%;background:radial-gradient(ellipse at 50% 80%,#fff6c2,#ffb347 40%,#ff6a00 70%,transparent 72%);filter:blur(.6px);animation:flicker .18s infinite alternate;margin-bottom:18px;box-shadow:0 0 40px 14px rgba(255,140,40,.35)}
+@keyframes flicker{from{transform:scaleX(.9) translateY(0) rotate(-2deg)}to{transform:scaleX(1.08) translateY(-3px) rotate(2deg)}}
+.seance-title{font-size:34px;font-weight:800;letter-spacing:.06em;color:var(--accent);text-shadow:0 0 24px rgba(255,122,26,.6)}.seance-sub{color:var(--muted);margin-top:6px;font-family:var(--mono);font-size:13px}
+.logs.glitch{animation:glitch .4s steps(2) 1}
+@keyframes glitch{0%{transform:skewX(0);text-shadow:none}25%{transform:skewX(-1deg) translateX(1px);text-shadow:2px 0 var(--err),-2px 0 var(--accent2)}50%{transform:skewX(1deg) translateX(-1px);text-shadow:-2px 0 var(--err),2px 0 var(--accent2)}100%{transform:none;text-shadow:none}}
+.bursts{margin:4px 0 6px}.bursts svg{width:100%;height:auto;display:block}
+.bursts text{font-family:var(--mono);font-size:8.5px;fill:var(--muted)}.bursts .lane{stroke:#232838;stroke-width:1}.bursts .tick.ERROR{stroke:var(--err)}.bursts .tick.WARN{stroke:var(--warn)}.bursts .tick{stroke-width:1.2}
+.bursts .volt{fill:none;stroke:#9fc1ff;stroke-width:1;opacity:.8}.bursts .band{fill:var(--accent);opacity:.22}.bursts .inv{fill:var(--accent2);opacity:.08}
+#sound-btn{min-width:38px}#auto-btn.on{border-color:var(--accent);color:var(--accent)}
+.story-label.orb-note{font-size:10.5px;color:#d7c9ff;border-color:#4a3f7a;background:rgba(24,20,40,.9);transition:opacity .3s}
+.story-label.card-note{font-size:9.5px;padding:2px 6px;color:var(--muted);background:rgba(17,20,28,.7)}
+.story-label em.ok{color:var(--ok)}
