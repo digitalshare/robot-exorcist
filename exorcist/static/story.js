@@ -399,7 +399,14 @@ export function createStory(container) {
   function seek(frac) {
     vt = t0 + (tEnd - t0) * frac; cursor = 0; cueHits = cueHits.map(() => 0);
     while (cursor < events.length && tsSeconds(events[cursor].ts) < vt) cursor++;
+    scrub.value = String(Math.round(frac * 1000));
     for (const id in rigs) EFFECTS.recover(id);
+    // ghosts of every haunting that already happened before this point stay on their robots
+    for (let i = 0; i < cursor; i++) for (const cue of story.cues || []) {
+      if (!HAUNTING.has(cue.effect) || !matches(cue, events[i])) continue;
+      const r = rigs[cue.system || Object.keys(rigs)[0]]; if (!r || r.state.haunted || banished) continue;
+      r.state.haunted = true; r.ghost.visible = true; r.ghost.position.set(0, 1.3, 0); r.ghost.scale.setScalar(1); r.ghostY = 1.3;
+    }
   }
   function fmt(sec) { const d = new Date(sec * 1000); return d.toISOString().slice(11, 19); }
   function resize() { const w = stage.clientWidth || 800, h = stage.clientHeight || 450; renderer.setSize(w, h, false); camera.aspect = w / h; camera.updateProjectionMatrix(); }
@@ -417,7 +424,15 @@ export function createStory(container) {
     }
     timeEl.textContent = events.length ? fmt(vt) : "--:--:--";
     for (let i = timers.length - 1; i >= 0; i--) if (now >= timers[i].until) { timers[i].undo(); timers.splice(i, 1); }
+    for (let i = tweens.length - 1; i >= 0; i--) { const tw = tweens[i]; const k = Math.min((now - tw.start) / tw.dur, 1); tw.fn(tw.ease(k)); if (k >= 1) { tweens.splice(i, 1); if (tw.done) tw.done(); } }
     const t = now / 1000;
+    for (const id in orbs) { // investigator orbs circle above the robot under investigation
+      const o = orbs[id], r = rigs[id]; if (!r) continue;
+      r.rig.anchor.getWorldPosition(v3); o.group.position.set(v3.x, v3.y + 1.0, v3.z);
+      const a = t * 1.6;
+      o.violet.position.set(Math.cos(a) * 0.38, Math.sin(a * 2) * 0.08, Math.sin(a) * 0.38);
+      o.amber.position.set(-Math.cos(a) * 0.38, Math.cos(a * 2) * 0.08, -Math.sin(a) * 0.38);
+    }
     for (const id in rigs) rigs[id].rig.idle(t, rigs[id].state);
     ghostPSU.position.y = 0.9 + Math.sin(t * 2) * 0.06;
     for (const id in rigs) { const g = rigs[id].ghost; g.position.y = 1.3 + Math.sin(t * 2 + id.length) * 0.06; g.rotation.y = t; }

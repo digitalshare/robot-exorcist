@@ -38,6 +38,11 @@ async function openStory(opts = {}) {
   if (opts.skipReplay) story.seek(1);
   // chapters already reached by the current run (only if that run is this scenario)
   const sameRun = state.scenario === scenario && state.status !== "idle";
+  if (sameRun) for (const id of Object.keys(state.steps)) {
+    // investigations already under way: orbs over the robot and the pages read so far on its pile
+    story.applyRunEvent(storyEvent({ type: "investigating", incident_id: id }));
+    for (const s of state.steps[id]) if (s.kind === "read") story.applyRunEvent(storyEvent({ type: "read", incident_id: id, url: s.url, title: s.title }));
+  }
   if (sameRun) for (const id of Object.keys(state.diagnoses)) story.applyRunEvent(storyEvent({ type: "diagnosis", incident_id: id, diagnosis: state.diagnoses[id] }));
   if (sameRun && state.verdict) story.applyRunEvent({ type: "verdict", verdict: state.verdict });
   if (sameRun && state.actions && state.actions.length) story.applyRunEvent({ type: "actions", actions: state.actions });
