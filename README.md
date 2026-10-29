@@ -46,6 +46,12 @@ Press **3D story** in the console, or open `http://127.0.0.1:8700/story?scenario
 
 The scene code is generic. Each scenario carries its own narrative in a `story` block in `robot.yaml`: `cues` match log lines (`match` substring or `/regex/`, optional `system`) to an `effect` (`freeze`, `tremble`, `voltage`, `stop_spin`, `halt`, `flicker`, `collide`, `overrange`, `recover`, …) and a caption (`{value}` is replaced by the number in the line), plus `chapters` for the investigation, verdict and actions. A test checks that every cue matches at least one real log line, so captions cannot drift from the fixtures. Three.js is vendored under `exorcist/static/vendor`, so story mode works offline.
 
+### Demo effects and the presenter key
+
+Everything below is driven by real run data, never by timers: ghosts rise out of a robot when its fault lines replay and, when the verdict names one shared cause, drift to the power supply and merge into one; two investigator orbs (Researcher violet, Diagnostician amber) circle the robot a crew is working on and pulse on every You.com search or page read, while each page read lands as a card on an evidence pile beside the robot; when the approved Slack and GitHub actions complete, a burst of light banishes the ghost and the cell turns green. In the console, a burst-timeline strip under the cell diagram shows one lane per subsystem with a tick per fault and the parsed voltages as a trace, so synchronized bursts read as vertical stripes; pressing Start plays a two-second séance title card, the log feed glitches on error bursts, and a speaker toggle (off by default) enables synthesized cues: a hum on brownouts, a thunk on protective stops, a chime per diagnosis, a gong at the verdict, a sparkle when the ticket is filed.
+
+Press **P** (or Autopilot) for the pitch sequence: the 3D story plays the problem chapter, the swarm starts by itself, the story reopens at the verdict for the ghost migration, and everything stops at the approval gate so a human visibly approves the real actions. Esc cancels.
+
 ## Why each partner is load-bearing
 
 | Partner | What it does here | Remove it and… |
